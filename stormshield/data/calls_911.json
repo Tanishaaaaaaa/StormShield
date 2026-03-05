@@ -1,0 +1,12 @@
+[
+  {
+    "incident_type": "Flooding",
+    "count": 3,
+    "district": "North"
+  },
+  {
+    "incident_type": "Road Closure",
+    "count": 1,
+    "district": "Downtown"
+  }
+]
