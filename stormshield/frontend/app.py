@@ -28,6 +28,7 @@ from frontend.components.alert_card import render_alert_card
 from frontend.components.confidence_badge import render_confidence_badge
 from frontend.components.simulation_panel import render_simulation_panel
 from frontend.components.query_panel import render_query_panel
+from frontend.components.weather_panel import render_weather_panel
 
 # ── Global CSS ─────────────────────────────────────────────────────────────
 st.markdown("""
@@ -196,9 +197,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# ── Tabs ───────────────────────────────────────────────────────────────────
-
-tab1, tab2, tab3 = st.tabs(["🗺️ Live Dashboard", "📋 Situation Report", "💬 Ask StormShield AI"])
+tab1, tab2, tab3, tab4 = st.tabs(["🗺️ Live Dashboard", "📋 Situation Report", "💬 Ask StormShield AI", "🌤️ Weather & Rainfall Analysis"])
 
 
 # ════════════════════════════════════════════════════════════
@@ -309,6 +308,12 @@ with tab3:
     st.markdown("#### 💬 Ask StormShield AI")
     render_query_panel(BACKEND_URL)
 
+
+# ════════════════════════════════════════════════════════════
+# TAB 4 — WEATHER & RAINFALL
+# ════════════════════════════════════════════════════════════
+with tab4:
+    render_weather_panel()
 
 # ── Auto-rerun loop ────────────────────────────────────────────────────────
 refresh = st.session_state.get("refresh_interval", 60)

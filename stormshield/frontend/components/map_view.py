@@ -30,6 +30,16 @@ def render_map(flood_zones: dict, ema_alerts: list[dict], calls_911: list[dict])
 
     # FEMA flood zone GeoJSON overlay
     if flood_zones and flood_zones.get("features"):
+        # Normalize property keys to lowercase so both stub and live data work
+        for feature in flood_zones["features"]:
+            props = feature.get("properties", {})
+            # Create a lowercase version of all keys
+            new_props = {k.lower(): v for k, v in props.items()}
+            # Specific fallback for 'name' which might be missing in live ArcGIS data
+            if "name" not in new_props:
+                new_props["name"] = f"Zone {new_props.get('fld_zone', 'Unknown')}"
+            feature["properties"] = new_props
+
         def style_function(feature):
             zone = feature["properties"].get("fld_zone", "X")
             color = ZONE_COLORS.get(zone, "#95a5a6")

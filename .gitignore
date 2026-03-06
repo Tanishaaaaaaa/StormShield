@@ -17,3 +17,6 @@ venv/
 
 # Streamlit
 .streamlit/
+
+# Data Files (large payloads)
+stormshield/data/*.json

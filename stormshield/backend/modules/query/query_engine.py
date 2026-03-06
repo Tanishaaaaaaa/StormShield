@@ -8,10 +8,12 @@ import logging
 import os
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 import google.generativeai as genai
 from pydantic import BaseModel
+
+from backend.config import settings
 
 from backend.modules.alert.engine import AlertStatus
 from backend.modules.ingestion.nws_client import NWSAlert
@@ -29,7 +31,7 @@ class QueryContext(BaseModel):
     forecast: PredictionResult
     alert: AlertStatus
     nws_alerts: list[NWSAlert]
-    zone_summary: str
+    flood_zones: dict[str, Any]  # Changed from zone_summary
 
 
 class QueryResponse(BaseModel):
@@ -56,52 +58,95 @@ def answer_query(
 
     grounded_at = datetime.now(timezone.utc)
 
+    # 1. Summarise NWS alerts
     nws_summary = "; ".join(
         [f"{a.event} ({a.severity})" for a in context.nws_alerts]
     ) or "None"
 
+    # 2. Derive zone summary from flood_zones GeoJSON
+    zone_names = set()
+    high_risk = False
+    for feat in context.flood_zones.get("features", []):
+        props = feat.get("properties", {})
+        sfha = props.get("sfha_tf", "F") == "T"
+        zone_names.add(props.get("name", "Unknown Zone"))
+        if sfha:
+            high_risk = True
+
+    zone_summary = f"{', '.join(list(zone_names)[:3])}"
+    if high_risk:
+        zone_summary += " (High-Risk SFHA Areas Found)"
+    else:
+        zone_summary += " (Minimal Risk Areas)"
+
+    # 3. Build context block
     context_block = (
-        f"Current water level: {context.sensor.water_level_ft} ft\n"
-        f"Predicted level (T+30): {context.forecast.predicted_level_ft} ft\n"
+        f"Current water level: {context.sensor.water_level_ft:.2f} ft\n"
+        f"Predicted level (T+30): {context.forecast.predicted_level_ft:.2f} ft\n"
         f"Alert level: {context.alert.level}\n"
-        f"Rate of rise: {context.alert.rate_of_rise_ft_per_15m} ft/15 min\n"
+        f"Rate of rise: {context.alert.rate_of_rise_ft_per_15m:+.3f} ft/15 min\n"
         f"Active NWS alerts: {nws_summary}\n"
-        f"FEMA flood zones in area: {context.zone_summary}\n"
+        f"FEMA flood zones in area: {zone_summary}\n"
     )
 
-    api_key = os.getenv("GEMINI_API_KEY", "")
+    api_key = settings.gemini_api_key
     if not api_key or api_key == "your_gemini_api_key":
+        logger.warning("Gemini API key missing or default; using fallback.")
         answer = _fallback_answer(user_question, context)
         _last_call_time = time.time()
         return QueryResponse(question=user_question, answer=answer, grounded_at=grounded_at)
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        
+        # Multi-model fallback logic for maximum reliability
+        model_names = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-1.5-flash", "gemini-pro"]
+        model = None
+        last_error = ""
 
-        # Build conversation with history
+        # Build conversation history
         history_str = ""
-        if history:
+        if history and isinstance(history, list):
             for turn in history[-5:]:
-                history_str += f"Q: {turn.get('q', '')}\nA: {turn.get('a', '')}\n"
+                q_hist = turn.get("q", turn.get("question", ""))
+                a_hist = turn.get("a", turn.get("answer", ""))
+                if q_hist:
+                    history_str += f"User: {q_hist}\nAssistant: {a_hist}\n"
 
         prompt = (
-            "You are StormShield AI, a flood safety assistant for Montgomery, Alabama.\n"
-            "Answer the following question using ONLY the provided real-time context.\n"
-            "If the answer cannot be determined from context, say so clearly.\n"
-            "Keep answers under 80 words. Do not use markdown.\n\n"
+            "You are StormShield AI, a highly local flood safety expert for Montgomery, Alabama.\n"
+            "Use the real-time sensor and geographic context below to answer accurately.\n"
+            "Rules:\n"
+            "1. If the question is about safety, reference the current alert level immediately.\n"
+            "2. If the user is in a 'High-Risk SFHA' area, advise extreme caution.\n"
+            "3. Keep the response under 70 words and very professional.\n"
+            "4. Do NOT use markdown symbols like * or #.\n\n"
             f"CONTEXT:\n{context_block}\n"
-            f"{('PREVIOUS CONVERSATION:\n' + history_str) if history_str else ''}"
-            f"\nQUESTION: {user_question}"
+            f"{'CHAT HISTORY:' + history_str if history_str else ''}\n"
+            f"USER QUERY: {user_question}"
         )
-        response = model.generate_content(prompt)
-        answer = response.text.strip()
+
+        for m_name in model_names:
+            try:
+                model = genai.GenerativeModel(m_name)
+                response = model.generate_content(prompt)
+                answer = response.text.strip()
+                if answer:
+                    break
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"Model {m_name} failed: {e}")
+                continue
+        
+        if not answer:
+            raise Exception(f"All models failed. Last error: {last_error}")
+
     except Exception as exc:
         logger.error("Gemini query failed: %s", exc)
         answer = _fallback_answer(user_question, context)
 
     _last_call_time = time.time()
-    return QueryResponse(question=user_question, answer=answer, grounded_at=grounded_at)
+    return QueryResponse(**{"question": user_question, "answer": answer, "grounded_at": grounded_at})
 
 
 def _fallback_answer(user_question: str, ctx: QueryContext) -> str:

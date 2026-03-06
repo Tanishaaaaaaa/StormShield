@@ -35,51 +35,95 @@ def _save_json(filename: str, data: dict | list) -> None:
         json.dump(data, f, indent=2)
 
 
-def _brightdata_request(url: str, api_key: str) -> str | None:
-    """Make a Bright Data Web Unlocker or Browser API request."""
-    if not api_key:
-        logger.warning("No Bright Data API key configured. Returning None.")
-        return None
-    try:
-        proxy_url = f"https://brd-customer-hl_b0ba2e76-zone-web_unlocker1:{api_key}@brd.superproxy.io:22225"
-        with httpx.Client(proxy=proxy_url, verify=False) as client:
-            resp = client.get(url, timeout=30)
-            resp.raise_for_status()
+def _brightdata_request(url: str, password: str) -> str | None:
+    """Make a Bright Data Scraping Browser request via Selenium for dynamic pages."""
+    if not password:
+        # Fallback to direct HTTP if no proxy password, but log warning
+        try:
+            resp = httpx.get(url, timeout=10)
             return resp.text
+        except Exception:
+            return None
+
+    try:
+        from selenium.webdriver import Remote, ChromeOptions
+        import time
+        
+        proxy_url = f"https://brd-customer-hl_0e293ce6-zone-scraping_browser1:fh1wk5f53598@brd.superproxy.io:9515"
+        logger.info(f"Connecting to Scraping Browser for {url}...")
+        options = ChromeOptions()
+        # Set page load strategy to eager for faster data extraction
+        options.page_load_strategy = 'eager'
+        
+        driver = Remote(command_executor=proxy_url, options=options)
+        try:
+            driver.set_page_load_timeout(60)
+            driver.get(url)
+            time.sleep(3)
+            
+            if any(ext in url for ext in ["/explore", "f=geojson", "f=json"]):
+                content = driver.execute_script("return document.body.innerText;")
+            else:
+                content = driver.page_source
+                
+            if content:
+                logger.info(f"Successfully fetched {len(content)} characters via Browser.")
+            return content
+        finally:
+            driver.quit()
     except Exception as exc:
-        logger.warning("Bright Data request failed: %s", exc)
+        logger.warning("Bright Data Browser request failed: %s", exc)
         return None
 
+def _download_flood_data(url: str, password: str) -> dict | None:
+    """Specialised high-capacity downloader for 20MB+ ArcGIS files."""
+    # We use a standard HTTP proxy on port 22225 for large data files instead of a headful browser
+    proxy_url = f"https://brd-customer-hl_0e293ce6-zone-scraping_browser1:fh1wk5f53598@brd.superproxy.io:22225"
+    
+    logger.info("Starting large-file download for %s...", url)
+    try:
+        # Increase timeout significantly for 20MB+ payload
+        with httpx.Client(proxy=proxy_url, verify=False, timeout=180.0) as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
+            logger.info("Successfully downloaded and parsed %d features.", len(data.get("features", [])))
+            return data
+    except Exception as exc:
+        logger.warning("Proxy download failed (%s), trying direct...", exc)
+        try:
+            resp = httpx.get(url, timeout=180.0)
+            return resp.json()
+        except Exception as exc2:
+            logger.error("All download methods failed for flood data: %s", exc2)
+            return None
 
-def scrape_flood_zones(api_key: str = "") -> dict:
+
+def scrape_flood_zones(password: str = "") -> dict:
     """
-    Attempt to scrape FEMA flood zone GeoJSON from the Montgomery County portal.
-    Falls back to cached flood_zones.json on failure.
+    Scrape complete FEMA flood zone dataset.
+    Uses high-capacity proxy download for 20MB+ files.
     """
+    # Check cache first
     cached = _load_json("flood_zones.json")
-    if isinstance(cached, dict) and cached:
-        logger.info("Using cached flood_zones.json")
+    if isinstance(cached, dict) and len(cached.get("features", [])) > 10:
+        logger.info("Using cached flood_zones.json with %d features.", len(cached["features"]))
         return cached
 
-    # Real scrape target – Montgomery County FEMA FIRM panel
-    url = "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query?where=DFIRM_ID%3D%27010010%27&outFields=*&f=geojson"
-    raw = _brightdata_request(url, api_key)
-    if raw:
-        try:
-            data = json.loads(raw)
-            if isinstance(data, dict):
-                _save_json("flood_zones.json", data)
-                return data
-        except json.JSONDecodeError:
-            pass
+    url = "https://gis.montgomeryal.gov/server/rest/services/OneView/Flood_Hazard_Areas/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson"
+    data = _download_flood_data(url, password)
+    
+    if data and isinstance(data, dict) and data.get("features"):
+        _save_json("flood_zones.json", data)
+        return data
 
-    # Return stub GeoJSON so the app still functions
+    # Fallback to stub if all else fails
     stub = _stub_flood_zones()
     _save_json("flood_zones.json", stub)
     return stub
 
 
-def scrape_ema_alerts(api_key: str = "") -> list[dict]:
+def scrape_ema_alerts(password: str = "") -> list[dict]:
     """
     Scrape EMA weather alerts from Montgomery County EMA page.
     Falls back to cached ema_alerts.json.
@@ -89,7 +133,7 @@ def scrape_ema_alerts(api_key: str = "") -> list[dict]:
         return cast(list[dict], cached)
 
     url = "https://www.montgomeryal.gov/city-government/departments/ema/public-safety-alerts"
-    raw = _brightdata_request(url, api_key)
+    raw = _brightdata_request(url, password)
     if raw:
         try:
             soup = BeautifulSoup(raw, "lxml")
@@ -113,7 +157,7 @@ def scrape_ema_alerts(api_key: str = "") -> list[dict]:
     return stub
 
 
-def scrape_911_calls(api_key: str = "") -> list[dict]:
+def scrape_911_calls(password: str = "") -> list[dict]:
     """
     Scrape 911 call aggregates related to flooding from Montgomery open data.
     Falls back to cached calls_911.json.

@@ -25,7 +25,7 @@ def render_confidence_badge(confidence_score: float) -> None:
     <div style="margin: 6px 0 10px 0;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
             <span style="font-size:12px; color:#94a3b8; font-weight:600; letter-spacing:0.5px;">
-                MODEL CONFIDENCE
+                SYSTEM CONFIDENCE SCORE
             </span>
             <span style="
                 background:{color};
@@ -36,7 +36,7 @@ def render_confidence_badge(confidence_score: float) -> None:
                 border-radius:20px;
             ">{label} · {pct}%</span>
         </div>
-        <div style="background:#1e293b; border-radius:6px; height:8px; overflow:hidden;">
+        <div style="background:#1e293b; border-radius:6px; height:8px; overflow:hidden; margin-bottom:4px;">
             <div style="
                 background: linear-gradient(90deg, {color}88, {color});
                 width:{pct}%;
@@ -44,6 +44,11 @@ def render_confidence_badge(confidence_score: float) -> None:
                 border-radius:6px;
                 transition: width 0.5s ease;
             "></div>
+        </div>
+        <div style="font-size:10px; color:#64748b; line-height:1.4;">
+            <b>Based on:</b><br/>
+            • Model residual variance<br/>
+            • Trend consistency
         </div>
     </div>
     """

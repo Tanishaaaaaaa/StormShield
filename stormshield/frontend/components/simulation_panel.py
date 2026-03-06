@@ -45,6 +45,7 @@ def render_simulation_panel(backend_url: str, alert: dict | None = None) -> None
         peak_red = result.get("peak_level_reduction_ft", 0)
         runoff_pct = result.get("runoff_reduction_pct", 0)
         new_runoff = result.get("new_runoff_mm", base_runoff)
+        display_msg = result.get("display_message", "")
 
         col1, col2 = st.columns(2)
         with col1:
@@ -61,6 +62,10 @@ def render_simulation_panel(backend_url: str, alert: dict | None = None) -> None
                 delta=f"from {base_runoff:.0f} mm",
                 delta_color="inverse",
             )
+            
+        if display_msg:
+            st.info(display_msg)
+
 
         # Visual bar
         efficacy = min(peak_red / 0.5, 1.0)  # normalise to max 0.5 ft

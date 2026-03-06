@@ -41,14 +41,14 @@ def post_query(body: QueryRequest) -> QueryResponse:
         generated_at=datetime.now(timezone.utc),
     )
     nws_alerts = cache.get("nws_alerts") or []
-    zone_summary = cache.get("zone_summary") or "Capitol Heights: Zone AE, SFHA=True"
+    flood_zones = cache.get("flood_zones") or {"type": "FeatureCollection", "features": []}
 
     context = QueryContext(
         sensor=sensor,
         forecast=forecast,
         alert=alert,
         nws_alerts=nws_alerts,
-        zone_summary=zone_summary,
+        flood_zones=flood_zones,
     )
 
     return answer_query(body.question, context, history=body.history)
