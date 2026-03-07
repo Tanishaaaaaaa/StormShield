@@ -125,5 +125,5 @@ StormShield/
 
 This project was built for the **World Wide Vibes Hackathon**. The goal was to build a highly responsive, AI-driven civic application capable of assisting local emergency management agencies and keeping citizens informed during extreme weather events.
 
-**Team Name:** MoCo-Sentinel
+**Team Name:** OmniShield
 **Project Name:** StormShield AI

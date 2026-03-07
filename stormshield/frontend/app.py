@@ -14,7 +14,7 @@ from streamlit_folium import st_folium
 
 # ── Page config (MUST be first Streamlit call) ─────────────────────────────
 st.set_page_config(
-    page_title="StormShield AI — Montgomery Flood Guardian",
+    page_title="StormShield AI — Montgomery's Smart Flood & Weather Guardian",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -98,6 +98,9 @@ section[data-testid="stSidebar"] {
 }
 .query-subtitle {
     color: #94a3b8 !important;
+}
+[data-testid="stAlert"] p {
+    color: #ffffff !important;
 }
 .stChatMessage { background: rgba(15,23,42,0.7) !important; border-radius: 12px !important; }
 """
@@ -210,7 +213,7 @@ with st.sidebar:
     <div style="text-align:center; padding:16px 0 10px;">
         <div style="font-size:40px;">🛡️</div>
         <div style="font-size:16px; font-weight:700; color:#60a5fa;">StormShield AI</div>
-        <div style="font-size:11px; color:#64748b;">Montgomery Flood Guardian</div>
+        <div style="font-size:11px; color:#64748b;">Montgomery's Smart Flood & Weather Guardian</div>
     </div>
     <hr style="border-color:#1e293b;">
     """, unsafe_allow_html=True)
@@ -262,7 +265,7 @@ with header_col:
         <div style="font-size:48px;">🛡️</div>
         <div>
             <div class="header-title">StormShield AI</div>
-            <div class="header-sub">Montgomery's Smart Flood & Weather Guardian · USGS Sligo Creek Station 01648000</div>
+            <div class="header-sub">Montgomery's Smart Flood & Weather Guardian</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -352,6 +355,19 @@ with tab1:
 # ════════════════════════════════════════════════════════════
 with tab2:
     st.markdown("##### 📋 Alert History (last 20 records)")
+
+    # Header styling
+    # st.markdown("""
+    # <style>
+    # [data-testid="stDataFrame"] thead th {
+    #     text-align: center !important;
+    #     font-weight: 700 !important;
+    # }
+    # [data-testid="stDataFrame"] td {
+    #     text-align: left !important;
+    # }
+    # </style>
+    # """, unsafe_allow_html=True)
 
     if alert_hist:
         import pandas as pd
