@@ -118,6 +118,17 @@ GET  /health                    Backend health check
 
 ## ☁️ Cloud Deployment
 
-**Backend → Railway**: Set start command to `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+For the judging prototype, we recommend the following professional "two-service" deployment:
 
-**Frontend → Streamlit Community Cloud**: Set main file to `frontend/app.py`, add secrets via Streamlit dashboard.
+### **1. Backend (FastAPI)** → [Render](https://render.com)
+- **Repo Root**: Connect this repo.
+- **Root Directory**: `stormshield`
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+- **Envs**: Set `GEMINI_API_KEY`, `BRIGHTDATA_API_KEY`, and `PYTHONPATH=.` in the dashboard.
+
+### **2. Frontend (UI)** → [Streamlit Cloud](https://streamlit.io/cloud)
+- **Main path**: `stormshield/frontend/app.py`
+- **Secrets**: Add `BACKEND_URL = "https://your-render-app.onrender.com"` in Advanced Settings.
+
+Judges only need the **Streamlit Link** to interact with the full system.
