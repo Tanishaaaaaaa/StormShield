@@ -25,7 +25,7 @@ def render_map(flood_zones: dict, ema_alerts: list[dict], calls_911: list[dict])
     m = folium.Map(
         location=[32.3768, -86.3006],
         zoom_start=12,
-        tiles="CartoDB dark_matter",
+        tiles="CartoDB positron",
     )
 
     # FEMA flood zone GeoJSON overlay

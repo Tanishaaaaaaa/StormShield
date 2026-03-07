@@ -21,10 +21,13 @@ def render_confidence_badge(confidence_score: float) -> None:
         color = "#ef4444"
         label = "Low"
 
+    is_light = st.session_state.get("theme", "dark") == "light"
+    text_color = "#000000" if is_light else "#ffffff"
+
     badge_html = f"""
     <div style="margin: 6px 0 10px 0;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-size:12px; color:#94a3b8; font-weight:600; letter-spacing:0.5px;">
+            <span style="font-size:12px; color:{text_color}; font-weight:800; letter-spacing:0.5px;">
                 SYSTEM CONFIDENCE SCORE
             </span>
             <span style="

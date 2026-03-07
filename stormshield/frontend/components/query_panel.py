@@ -14,7 +14,7 @@ def render_query_panel(backend_url: str) -> None:
         st.session_state["query_history"] = []
 
     st.markdown("""
-    <div style="font-size:13px; color:#94a3b8; margin-bottom:12px;">
+    <div class="query-subtitle" style="font-size:13px; margin-bottom:12px;">
         Ask StormShield AI anything about current flood conditions, road closures,
         evacuation timing, or safe areas.
     </div>

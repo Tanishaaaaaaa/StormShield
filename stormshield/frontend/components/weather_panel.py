@@ -64,12 +64,11 @@ def render_weather_panel() -> None:
         # Today's Prediction Sentence
         st.markdown(f"**Today's Outlook:** {condition} with a temperature of {temp}°C.")
 
-        # Custom CSS to brighten metric labels
+        # Custom CSS for metrics (color is handled by global theme now)
         st.markdown("""
         <style>
         [data-testid="stMetricLabel"] {
-            color: #ffffff !important;
-            font-weight: 600 !important;
+            font-weight: 800 !important;
             font-size: 0.9rem !important;
             opacity: 1 !important;
         }
@@ -81,13 +80,13 @@ def render_weather_panel() -> None:
 
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("🌡️ Temp", f"{temp} °C")
+            st.metric("**🌡️ Temp**", f"{temp} °C")
         with col2:
-            st.metric("💧 Precip", f"{precip} mm")
+            st.metric("**💧 Precip**", f"{precip} mm")
         with col3:
-            st.metric("💨 Wind", f"{wind} km/h")
+            st.metric("**💨 Wind**", f"{wind} km/h")
         with col4:
-            st.metric("🌫️ Humidity", f"{humidity} %")
+            st.metric("**🌫️ Humidity**", f"{humidity} %")
             
         st.markdown("---")
         st.markdown("##### 📅 7-Day Forecast")

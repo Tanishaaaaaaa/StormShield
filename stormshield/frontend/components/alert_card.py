@@ -52,10 +52,10 @@ def render_alert_card(alert: dict, forecast: dict | None) -> None:
         margin-bottom: 10px;
         box-shadow: 0 4px 24px rgba(0,0,0,0.4);
     ">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-            <span style="font-size:28px;">{cfg['emoji']}</span>
+        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px;">
+            <span style="font-size:24px;">{cfg['emoji']}</span>
             <div>
-                <div style="font-size:18px; font-weight:700; color:{cfg['border']}; letter-spacing:0.5px;">
+                <div style="font-size:16px; font-weight:700; color:{cfg['border']}; letter-spacing:0.5px;">
                     {cfg['label']}
                 </div>
                 <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
@@ -63,7 +63,7 @@ def render_alert_card(alert: dict, forecast: dict | None) -> None:
                 </div>
             </div>
         </div>
-        <div style="display:flex; gap:20px; margin-bottom:14px;">
+        <div style="display:flex; gap:20px; margin-bottom:14px; justify-content:center; align-items:center;">
             <div style="text-align:center;">
                 <div style="font-size:26px; font-weight:800; color:{cfg['border']};">{pred_ft:.2f} ft</div>
                 <div style="font-size:10px; color:#94a3b8;">Predicted T+30</div>

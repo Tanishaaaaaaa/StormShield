@@ -30,25 +30,25 @@ from frontend.components.simulation_panel import render_simulation_panel
 from frontend.components.query_panel import render_query_panel
 from frontend.components.weather_panel import render_weather_panel
 
-# ── Global CSS ─────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+# ── Theme Setup & CSS ──────────────────────────────────────────────────────
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "dark"
 
-* { font-family: 'Inter', sans-serif !important; }
+def toggle_theme():
+    st.session_state["theme"] = "light" if st.session_state["theme"] == "dark" else "dark"
 
+DARK_THEME = """
 .stApp {
     background: linear-gradient(160deg, #020617 0%, #0f172a 40%, #0a0f1e 100%);
-    color: #e2e8f0;
+    color: #ffffff;
 }
-
-/* Sidebar */
+div[data-testid="stWidgetLabel"] p, label p {
+    color: #ffffff !important;
+}
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
     border-right: 1px solid #1e293b;
 }
-
-/* Tab styles */
 .stTabs [data-baseweb="tab-list"] {
     gap: 8px;
     background: transparent;
@@ -69,22 +69,19 @@ section[data-testid="stSidebar"] {
     border-color: #3b82f6 !important;
     color: #60a5fa !important;
 }
-
-/* Metrics */
 [data-testid="stMetricValue"] {
     font-size: 22px !important;
     font-weight: 700 !important;
     color: #f1f5f9 !important;
 }
-
-/* Header */
+[data-testid="stMetricLabel"] {
+    font-weight: 800 !important;
+}
 .main-header {
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 16px 0 8px 0;
-    border-bottom: 1px solid #1e293b;
-    margin-bottom: 16px;
 }
 .header-title {
     font-size: 26px;
@@ -99,11 +96,86 @@ section[data-testid="stSidebar"] {
     color: #64748b;
     margin-top: 2px;
 }
-
-/* Chat */
+.query-subtitle {
+    color: #94a3b8 !important;
+}
 .stChatMessage { background: rgba(15,23,42,0.7) !important; border-radius: 12px !important; }
-</style>
-""", unsafe_allow_html=True)
+"""
+
+LIGHT_THEME = """
+.stApp {
+    background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 40%, #e2e8f0 100%);
+    color: #0f172a;
+}
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+    border-right: 1px solid #cbd5e1;
+}
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background: transparent;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 0;
+}
+.stTabs [data-baseweb="tab"] {
+    background: rgba(226,232,240,0.5);
+    border: 1px solid #cbd5e1;
+    border-radius: 8px 8px 0 0;
+    color: #475569;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 8px 20px;
+}
+.stTabs [aria-selected="true"] {
+    background: rgba(59,130,246,0.1) !important;
+    border-color: #2563eb !important;
+    color: #2563eb !important;
+}
+[data-testid="stMetricValue"] {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important; /* Black/Dark slate for values */
+}
+[data-testid="stMetricLabel"] {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+}
+.query-subtitle {
+    color: #000000 !important;
+}
+.main-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 0 8px 0;
+}
+.header-title {
+    font-size: 26px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #2563eb, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+.header-sub {
+    font-size: 12px;
+    color: #475569;
+    margin-top: 2px;
+}
+.stChatMessage { background: rgba(241,245,249,0.7) !important; border-radius: 12px !important; }
+[data-testid="stChatInput"] { background-color: #e2e8f0 !important; border-radius: 8px !important; }
+[data-testid="stChatInput"] * { background-color: transparent !important; color: #0f172a !important; }
+[data-testid="stChatInput"] textarea { background-color: transparent !important; }
+"""
+
+COMMON_STYLE = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+* { font-family: 'Inter', sans-serif !important; }
+"""
+
+theme_css = DARK_THEME if st.session_state["theme"] == "dark" else LIGHT_THEME
+border_color = "#1e293b" if st.session_state["theme"] == "dark" else "#cbd5e1"
+st.markdown(f"<style>\n{COMMON_STYLE}\n{theme_css}\n</style>", unsafe_allow_html=True)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -182,22 +254,55 @@ sensor, history, forecast, alert, alert_hist, geo, ema, calls, health = fetch_al
 level = alert.get("level", "GREEN")
 level_emoji = {"RED": "🔴", "YELLOW": "🟡", "GREEN": "🟢"}.get(level, "🟢")
 
-st.markdown(f"""
-<div class="main-header">
-    <div style="font-size:48px;">🛡️</div>
-    <div>
-        <div class="header-title">StormShield AI</div>
-        <div class="header-sub">Montgomery's Smart Flood & Weather Guardian · USGS Sligo Creek Station 01648000</div>
+header_col, toggle_col = st.columns([0.80, 0.20], vertical_alignment="center")
+
+with header_col:
+    st.markdown(f"""
+    <div class="main-header">
+        <div style="font-size:48px;">🛡️</div>
+        <div>
+            <div class="header-title">StormShield AI</div>
+            <div class="header-sub">Montgomery's Smart Flood & Weather Guardian · USGS Sligo Creek Station 01648000</div>
+        </div>
     </div>
-    <div style="margin-left:auto; text-align:right;">
-        <div style="font-size:28px;">{level_emoji}</div>
-        <div style="font-size:11px; color:#64748b;">{level} ALERT</div>
+    """, unsafe_allow_html=True)
+
+with toggle_col:
+    # Flex container to align everything top-right
+    st.markdown("""
+    <style>
+    /* target the standard toggle widget to force it right */
+    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stHorizontalBlock"] {
+        align-items: flex-start !important;
+    }
+    .top-right-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 8px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    is_light = st.session_state["theme"] == "light"
+    mode_label = "☀️ Light Mode" if is_light else "🌙 Dark Mode"
+    
+    st.markdown('<div class="top-right-panel">', unsafe_allow_html=True)
+    st.toggle(mode_label, key="theme_toggle", value=is_light, on_change=toggle_theme)
+    
+    st.markdown(f"""
+        <div style="text-align: center; line-height: 1.1; margin-right: 20px;">
+            <div style="font-size:24px;">{level_emoji}</div>
+            <div style="font-size:11px; color:#64748b; font-weight:bold; margin-top: 3px;">{level} ALERT</div>
+        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+st.markdown(f"<hr style='margin-top: 0; margin-bottom: 16px; border-color: {border_color}; border-width: 1px 0 0 0; font-weight: bold;'>", unsafe_allow_html=True)
 
 
-tab1, tab2, tab3, tab4 = st.tabs(["🗺️ Live Dashboard", "📋 Situation Report", "💬 Ask StormShield AI", "🌤️ Weather & Rainfall Analysis"])
+tab1, tab2, tab3, tab4 = st.tabs(["🗺️ **Live Dashboard**", "📋 **Situation Report**", "💬 **Ask StormShield AI**", "🌤️ **Weather & Rainfall Analysis**"])
 
 
 # ════════════════════════════════════════════════════════════
@@ -208,15 +313,15 @@ with tab1:
 
     # LEFT COLUMN — Map + Chart
     with col1:
-        st.markdown("#### 🗺️ Montgomery Flood Zone Map")
+        st.markdown("##### 🗺️ Montgomery Flood Zone Map")
         render_map(geo, ema, calls)
 
-        st.markdown("#### 📈 Water Level History & Forecast")
+        st.markdown("##### 📈 Water Level History & Forecast")
         render_gauge_chart(history, forecast)
 
     # RIGHT COLUMN — Alert + Confidence + Simulation
     with col2:
-        st.markdown("#### ⚠️ Current Alert Status")
+        st.markdown("##### ⚠️ Current Alert Status")
         render_alert_card(alert, forecast)
 
         if forecast:
@@ -232,11 +337,11 @@ with tab1:
 
         m1, m2 = st.columns(2)
         with m1:
-            st.metric("💧 Water Level", f"{wl:.2f} ft")
-            st.metric("📉 Rate of Rise", f"{ror:+.3f} ft/15m")
+            st.metric("**💧 Water Level**", f"{wl:.2f} ft")
+            st.metric("**📉 Rate of Rise**", f"{ror:+.3f} ft/15m")
         with m2:
-            st.metric("🌊 Discharge", f"{dis:.0f} cfs")
-            st.metric("🔮 Predicted (T+30)", f"{pred:.2f} ft")
+            st.metric("**🌊 Discharge**", f"{dis:.0f} cfs")
+            st.metric("**🔮 Predicted (T+30)**", f"{pred:.2f} ft")
 
         st.markdown("---")
         render_simulation_panel(BACKEND_URL, alert)
@@ -246,7 +351,7 @@ with tab1:
 # TAB 2 — SITUATION REPORT
 # ════════════════════════════════════════════════════════════
 with tab2:
-    st.markdown("#### 📋 Alert History (last 20 records)")
+    st.markdown("##### 📋 Alert History (last 20 records)")
 
     if alert_hist:
         import pandas as pd
@@ -277,7 +382,7 @@ with tab2:
         st.info("No alert history yet — data is collected on each scheduler cycle (every 5 min).")
 
     st.markdown("---")
-    st.markdown("#### 📢 Current Alert Bulletin")
+    st.markdown("##### 📢 Current Alert Bulletin")
     alert_text = alert.get("alert_text", "No alert text available.")
     level_color = {"RED": "#ef4444", "YELLOW": "#f59e0b", "GREEN": "#22c55e"}.get(level, "#22c55e")
     st.markdown(f"""
@@ -290,7 +395,7 @@ with tab2:
 
     # NWS Alerts
     st.markdown("---")
-    st.markdown("#### 🌩️ Active NWS Alerts")
+    st.markdown("##### 🌩️ Active NWS Alerts")
     nws_alerts = fetch_json(f"{BACKEND_URL}/api/geodata/ema-alerts") or []
     for a in nws_alerts:
         title = a.get("title", "Alert")
@@ -305,7 +410,7 @@ with tab2:
 # TAB 3 — ASK STORMSHIELD AI
 # ════════════════════════════════════════════════════════════
 with tab3:
-    st.markdown("#### 💬 Ask StormShield AI")
+    st.markdown("##### 💬 Ask StormShield AI")
     render_query_panel(BACKEND_URL)
 
 
