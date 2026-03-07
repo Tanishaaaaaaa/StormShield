@@ -19,6 +19,7 @@ from backend.modules.alert.engine import AlertStatus
 from backend.modules.ingestion.nws_client import NWSAlert
 from backend.modules.ingestion.usgs_client import SensorReading
 from backend.modules.prediction.model import PredictionResult
+from backend.modules.ingestion.weather_client import WeatherStatus
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,10 @@ class QueryContext(BaseModel):
     forecast: PredictionResult
     alert: AlertStatus
     nws_alerts: list[NWSAlert]
-    flood_zones: dict[str, Any]  # Changed from zone_summary
+    flood_zone_summary: str  # Summarized text instead of 175MB GeoJSON
+    ema_alerts: list[dict] = []
+    calls_911: list[dict] = []
+    weather: Optional[WeatherStatus] = None
 
 
 class QueryResponse(BaseModel):
@@ -63,30 +67,38 @@ def answer_query(
         [f"{a.event} ({a.severity})" for a in context.nws_alerts]
     ) or "None"
 
-    # 2. Derive zone summary from flood_zones GeoJSON
-    zone_names = set()
-    high_risk = False
-    for feat in context.flood_zones.get("features", []):
-        props = feat.get("properties", {})
-        sfha = props.get("sfha_tf", "F") == "T"
-        zone_names.add(props.get("name", "Unknown Zone"))
-        if sfha:
-            high_risk = True
+    # 2. Road Closures and Incidents Summary
+    ema_summary = "; ".join(
+        [f"{a.get('title', 'Alert')}: {a.get('body', '')[:60]}..." for a in context.ema_alerts[:3]]
+    ) or "No active road closure reports."
+    
+    call_summary = ", ".join(
+        [f"{c.get('incident_type', 'Incident')} ({c.get('count', 0)})" for c in context.calls_911]
+    ) or "0 reported incidents."
 
-    zone_summary = f"{', '.join(list(zone_names)[:3])}"
-    if high_risk:
-        zone_summary += " (High-Risk SFHA Areas Found)"
-    else:
-        zone_summary += " (Minimal Risk Areas)"
+    # 3. Weather sub-summary
+    weather_info = "Status: Unknown"
+    if context.weather:
+        weather_info = (
+            f"{context.weather.condition}, {context.weather.temperature}°C. "
+            f"Rain today so far: {context.weather.daily_precip_sum} mm."
+        )
 
-    # 3. Build context block
+    # 4. Build context block
     context_block = (
-        f"Current water level: {context.sensor.water_level_ft:.2f} ft\n"
-        f"Predicted level (T+30): {context.forecast.predicted_level_ft:.2f} ft\n"
-        f"Alert level: {context.alert.level}\n"
-        f"Rate of rise: {context.alert.rate_of_rise_ft_per_15m:+.3f} ft/15 min\n"
-        f"Active NWS alerts: {nws_summary}\n"
-        f"FEMA flood zones in area: {zone_summary}\n"
+        f"--- CURRENT SENSORS ---\n"
+        f"Water Level: {context.sensor.water_level_ft:.2f} ft\n"
+        f"Rate of Rise: {context.alert.rate_of_rise_ft_per_15m:+.3f} ft/15 min\n"
+        f"Alert Level: {context.alert.level}\n\n"
+        f"--- FORECAST (T+30) ---\n"
+        f"Predicted Level: {context.forecast.predicted_level_ft:.2f} ft\n"
+        f"Estimated Crest: {context.forecast.estimated_crest_iso.strftime('%H:%M:%S')} UTC\n\n"
+        f"--- EMERGENCY SERVICES ---\n"
+        f"Weather: {weather_info}\n"
+        f"NWS Alerts: {nws_summary}\n"
+        f"Road Closures (EMA): {ema_summary}\n"
+        f"911 Reports: {call_summary}\n"
+        f"Area Flood Risk: {context.flood_zone_summary}\n"
     )
 
     api_key = settings.gemini_api_key
@@ -115,12 +127,13 @@ def answer_query(
 
         prompt = (
             "You are StormShield AI, a highly local flood safety expert for Montgomery, Alabama.\n"
-            "Use the real-time sensor and geographic context below to answer accurately.\n"
+            "Use the real-time sensor, weather, and geographic context below to answer accurately.\n"
             "Rules:\n"
             "1. If the question is about safety, reference the current alert level immediately.\n"
             "2. If the user is in a 'High-Risk SFHA' area, advise extreme caution.\n"
-            "3. Keep the response under 70 words and very professional.\n"
-            "4. Do NOT use markdown symbols like * or #.\n\n"
+            "3. For questions about rain history, refer to 'Current Weather' in the context. If 'Rain today so far' is 0.0mm, it has not rained yet today.\n"
+            "4. Keep the response under 70 words and very professional.\n"
+            "5. Do NOT use markdown symbols like * or #.\n\n"
             f"CONTEXT:\n{context_block}\n"
             f"{'CHAT HISTORY:' + history_str if history_str else ''}\n"
             f"USER QUERY: {user_question}"

@@ -111,7 +111,8 @@ section[data-testid="stSidebar"] {
 @st.cache_data(ttl=30, show_spinner=False)
 def fetch_json(url: str) -> dict | list | None:
     try:
-        resp = httpx.get(url, timeout=8)
+        # Increase timeout for the 175MB flood_zones.json file
+        resp = httpx.get(url, timeout=60)
         resp.raise_for_status()
         return resp.json()
     except Exception:
@@ -155,7 +156,21 @@ with st.sidebar:
     st.markdown("**📍 Address Lookup**")
     address = st.text_input("Enter address to check FEMA zone", placeholder="123 Main St, Montgomery AL")
     if address:
-        st.info("Geocoding is available via NOAA GridPoint lookup. Enter a full Montgomery, AL address.")
+        with st.spinner("Checking FEMA maps..."):
+            res = fetch_json(f"{BACKEND_URL}/api/geodata/lookup?address={address}")
+            if res and "error" not in res:
+                zone = res.get("zone", "X (Minimal Risk)")
+                high_risk = res.get("is_high_risk", False)
+                
+                st.success(f"**Zone: {zone}**")
+                if high_risk:
+                    st.error("⚠️ This address is in a High-Risk SFHA area.")
+                else:
+                    st.info("✅ This address is in a Minimal/Moderate risk area.")
+                
+                st.caption(f"📍 {res.get('address', address)}")
+            else:
+                st.warning(f"Address not found or error: {res.get('error') if res else 'Unknown'}")
 
     st.markdown("---")
 

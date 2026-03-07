@@ -83,6 +83,18 @@ def job_scrape_ema() -> None:
     logger.info("[Scheduler] EMA/911 scrape complete.")
 
 
+def job_poll_weather() -> None:
+    """Poll Open-Meteo for live weather context."""
+    from backend.modules.ingestion.weather_client import fetch_current_weather
+    from backend.modules.cache import store as cache
+
+    logger.info("[Scheduler] Polling Live Weather…")
+    status = fetch_current_weather(settings.location_lat, settings.location_lon)
+    if status:
+        cache.set("weather_status", status, ttl_seconds=1200)
+        logger.info("[Scheduler] Weather poll complete: %s, %.1f°C", status.condition, status.temperature)
+
+
 def configure_jobs() -> None:
     """Register all background jobs with APScheduler."""
     scheduler.add_job(
@@ -104,5 +116,12 @@ def configure_jobs() -> None:
         "interval",
         seconds=settings.scrape_ema_interval,
         id="scrape_ema",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        job_poll_weather,
+        "interval",
+        seconds=900,  # 15 min
+        id="poll_weather",
         replace_existing=True,
     )

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
 from backend.modules.cache import store as cache
 from backend.modules.prediction.model import XGBoostPredictor
-from backend.scheduler import configure_jobs, job_poll_noaa, job_poll_usgs, scheduler, job_scrape_ema
+from backend.scheduler import configure_jobs, job_poll_noaa, job_poll_usgs, scheduler, job_scrape_ema, job_poll_weather
 
 logging.basicConfig(
     level=logging.INFO,
@@ -51,6 +51,11 @@ async def lifespan(app: FastAPI):
         job_poll_usgs()
     except Exception as exc:
         logger.warning("Initial USGS poll failed: %s", exc)
+
+    try:
+        job_poll_weather()
+    except Exception as exc:
+        logger.warning("Initial weather poll failed: %s", exc)
 
     # Start background scheduler
     configure_jobs()

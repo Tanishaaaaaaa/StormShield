@@ -41,14 +41,20 @@ def post_query(body: QueryRequest) -> QueryResponse:
         generated_at=datetime.now(timezone.utc),
     )
     nws_alerts = cache.get("nws_alerts") or []
-    flood_zones = cache.get("flood_zones") or {"type": "FeatureCollection", "features": []}
+    ema_alerts = cache.get("ema_alerts") or []
+    calls_911 = cache.get("calls_911") or []
+    weather = cache.get("weather_status")
+    flood_summary = _get_flood_summary(cache)
 
     context = QueryContext(
         sensor=sensor,
         forecast=forecast,
         alert=alert,
         nws_alerts=nws_alerts,
-        flood_zones=flood_zones,
+        flood_zone_summary=flood_summary,
+        ema_alerts=ema_alerts,
+        calls_911=calls_911,
+        weather=weather,
     )
 
     return answer_query(body.question, context, history=body.history)
@@ -60,3 +66,15 @@ def _get_latest_sensor(cache):
     if readings:
         return readings[-1]
     return _generate_fallback_readings()[-1]
+
+
+def _get_flood_summary(cache) -> str:
+    """Return a lightweight summary of flood zones to avoid processing 175MB GeoJSON."""
+    summary = cache.get("flood_zone_summary_text")
+    if summary:
+        return summary
+    
+    # Default Montgomery context for RAG grounding
+    summary = "AE (High Risk SFHA), X (Minimal Risk), 0.2 PCT (Moderate Risk)"
+    cache.set("flood_zone_summary_text", summary, ttl_seconds=86400)
+    return summary
