@@ -98,10 +98,10 @@ section[data-testid="stSidebar"] hr {
 .main-header {
     background: rgba(30, 41, 59, 0.4);
     backdrop-filter: blur(8px);
-    padding: 20px;
-    border-radius: 16px;
+    padding: 12px 16px;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
 .header-title {
     font-size: 32px;
@@ -129,6 +129,21 @@ section[data-testid="stSidebar"] hr {
     font-weight: 900;
     animation: pulse-live 2s infinite ease-in-out;
     margin-right: 8px;
+}
+
+.stChatMessage {
+    background: rgba(30, 41, 59, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.stChatMessage [data-testid="stMarkdownContainer"] p {
+    color: #ffffff !important;
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+}
+.stChatMessage [data-testid="stCaptionContainer"] {
+    color: #cbd5e1 !important;
+    font-weight: 500;
 }
 """
 
@@ -170,10 +185,10 @@ section[data-testid="stSidebar"] {
 
 .main-header {
     background: white;
-    padding: 20px;
-    border-radius: 16px;
+    padding: 12px 16px;
+    border-radius: 12px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
 .header-title {
     font-size: 32px;
@@ -183,9 +198,20 @@ section[data-testid="stSidebar"] {
     -webkit-text-fill-color: transparent;
 }
 .stChatMessage { 
-    background: white !important; 
+    background: #ffffff !important; 
     border-radius: 16px !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+.stChatMessage [data-testid="stMarkdownContainer"] p {
+    color: #0f172a !important;
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+    font-weight: 500 !important;
+}
+.stChatMessage [data-testid="stCaptionContainer"] {
+    color: #64748b !important;
+    font-weight: 600;
 }
 """
 
@@ -479,19 +505,19 @@ header_col, toggle_col = st.columns([0.80, 0.20], vertical_alignment="center")
 with header_col:
     st.markdown(f"""
     <div class="main-header" style="display:flex; align-items:center; justify-content:space-between;">
-        <div style="display:flex; align-items:center; gap:20px;">
-            <div style="font-size:54px; filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.5));">🛡️</div>
-            <div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <span class="header-title">StormShield AI</span>
-                    <span class="live-badge">● LIVE</span>
+        <div style="display:flex; align-items:center; gap:16px;">
+            <div style="font-size:42px; filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.4));">🛡️</div>
+            <div style="margin-top: -2px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="header-title" style="font-size: 26px;">StormShield AI</span>
+                    <span class="live-badge" style="font-size: 9px; padding: 1px 6px;">● LIVE</span>
                 </div>
-                <div class="header-sub">Montgomery's Smart Flood & Weather Guardian</div>
+                <div class="header-sub" style="font-size: 11px;">Montgomery's Smart Flood & Weather Guardian</div>
             </div>
         </div>
-        <div style="text-align:right; background:rgba(15,23,42,0.4); padding:10px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-            <div style="font-size:12px; font-weight:800; color:#facc15; letter-spacing:1px;">{level} STATUS</div>
-            <div style="font-size:10px; color:#64748b; margin-top:2px;">{datetime.now(timezone.utc).strftime("%b %d, %H:%M:%S")} UTC</div>
+        <div style="text-align:right; background:rgba(15,23,42,0.4); padding:6px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:11px; font-weight:800; color:#facc15; letter-spacing:0.8px;">{level} STATUS</div>
+            <div style="font-size:9px; color:#64748b; margin-top:1px;">{datetime.now(timezone.utc).strftime("%H:%M:%S")} UTC</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -528,35 +554,31 @@ with toggle_col:
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown(f"<hr style='margin-top: 0; margin-bottom: 16px; border-color: {border_color}; border-width: 1px 0 0 0; font-weight: bold;'>", unsafe_allow_html=True)
+st.markdown(f"<hr style='margin-top: 0; margin-bottom: 8px; border-color: {border_color}; border-width: 1px 0 0 0;'>", unsafe_allow_html=True)
 
 
 tab1, tab2, tab3, tab4 = st.tabs(["🗺️ **Live Dashboard**", "📋 **Situation Report**", "💬 **Ask StormShield AI**", "🌤️ **Weather & Rainfall Analysis**"])
 
 
-# ════════════════════════════════════════════════════════════
 # TAB 1 — LIVE DASHBOARD
 # ════════════════════════════════════════════════════════════
 with tab1:
-    col1, col2 = st.columns([2, 1], gap="large")
+    col1, col2 = st.columns([1.8, 1.2], gap="small")
 
     # LEFT COLUMN — Map + Chart
     with col1:
-        st.markdown("##### 🗺️ Montgomery Flood Zone Map")
+        st.markdown("###### 🗺️ Montgomery Flood Zone Map")
         render_map(geo, ema, calls, highlight_point=lookup_pnt)
-
-        st.markdown("##### 📈 Water Level History & Forecast")
+        st.markdown("###### 📈 Water Level History & Forecast")
         render_gauge_chart(history, forecast)
 
     # RIGHT COLUMN — Alert + Confidence + Simulation
     with col2:
-        st.markdown("##### ⚠️ Current Alert Status")
+        st.markdown("###### ⚠️ Current Alert Status")
         render_alert_card(alert, forecast)
 
         if forecast:
             render_confidence_badge(forecast.get("confidence_score", 0.6))
-
-        st.markdown("---")
 
         # Live metrics row
         wl = sensor.get("water_level_ft", 0)
@@ -566,13 +588,12 @@ with tab1:
 
         m1, m2 = st.columns(2)
         with m1:
-            st.metric("**💧 Water Level**", f"{wl:.2f} ft")
-            st.metric("**📉 Rate of Rise**", f"{ror:+.3f} ft/15m")
+            st.metric("💧 Water Level", f"{wl:.2f} ft")
+            st.metric("📉 Rate of Rise", f"{ror:+.3f}")
         with m2:
-            st.metric("**🌊 Discharge**", f"{dis:.0f} cfs")
-            st.metric("**🔮 Predicted (T+30)**", f"{pred:.2f} ft")
+            st.metric("🌊 Discharge", f"{dis:.0f}")
+            st.metric("🔮 Predicted", f"{pred:.2f} ft")
 
-        st.markdown("---")
         render_simulation_panel(BACKEND_URL, alert)
 
 
@@ -580,7 +601,7 @@ with tab1:
 # TAB 2 — SITUATION REPORT
 # ════════════════════════════════════════════════════════════
 with tab2:
-    st.markdown("##### 📋 Alert History (last 20 records)")
+    st.markdown("##### 📋 Alert History")
 
     # Header styling
     # st.markdown("""

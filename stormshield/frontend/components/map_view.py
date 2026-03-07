@@ -119,14 +119,15 @@ def render_map(
     # Legend
     legend_html = """
     <div style="position: fixed; bottom: 30px; left: 30px; z-index: 1000;
-         background: rgba(15,15,35,0.92); padding: 12px 16px; border-radius: 10px;
-         border: 1px solid #333; color: #eee; font-size: 12px; font-family: sans-serif;">
-      <b style="color:#00d4ff;">FEMA Flood Zones</b><br>
-      <span style="color:#e74c3c;">&#9632;</span> AE — High Risk (SFHA)<br>
-      <span style="color:#e67e22;">&#9632;</span> AO/AH — Shallow<br>
-      <span style="color:#27ae60;">&#9632;</span> X — Minimal Risk<br>
-      <span style="color:#f39c12;">&#9679;</span> EMA Alert<br>
-      <span style="color:#e74c3c;">&#9679;</span> 911 Incident
+         background: rgba(15,15,35,0.92); padding: 15px; border-radius: 10px;
+         border: 1px solid #333; color: #eee; font-size: 13px; font-family: 'Inter', sans-serif;
+         box-shadow: 0 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+      <div style="font-weight: bold; color: #00d4ff; margin-bottom: 8px; font-size: 14px;">FEMA Flood Zones</div>
+      <div style="margin-bottom: 4px;"><span style="color:#e74c3c; margin-right: 8px;">■</span> AE — High Risk (SFHA)</div>
+      <div style="margin-bottom: 4px;"><span style="color:#e67e22; margin-right: 8px;">■</span> AO/AH — Shallow</div>
+      <div style="margin-bottom: 8px;"><span style="color:#27ae60; margin-right: 8px;">■</span> X — Minimal Risk</div>
+      <div style="margin-bottom: 4px;"><span style="color:#f39c12; margin-right: 8px;">●</span> EMA Alert</div>
+      <div style="margin-bottom: 0;"><span style="color:#e74c3c; margin-right: 8px;">●</span> 911 Incident</div>
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))

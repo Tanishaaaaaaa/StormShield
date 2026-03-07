@@ -39,8 +39,16 @@ def get_weather_desc(code: int) -> str:
     }
     return mapping.get(code, "Cloudy")
 
+import plotly.express as px
+import plotly.graph_objects as go
+
 def render_weather_panel() -> None:
-    st.markdown("#### 🌤️ Live Weather & Rainfall Forecast (Montgomery, AL)")
+    st.markdown("""
+        <div style="margin-bottom: 20px;">
+            <h4 style="margin:0; background: linear-gradient(135deg, #60a5fa 0%, #22d3ee 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🌤️ Weather & Rainfall Analysis</h4>
+            <div style="font-size: 13px; color: #94a3b8;">Live meteorological data and precise rainfall projections for Montgomery, AL</div>
+        </div>
+    """, unsafe_allow_html=True)
     
     # Montgomery coordinates
     lat = 32.3668
@@ -61,67 +69,109 @@ def render_weather_panel() -> None:
         code = current.get("weather_code", 0)
         condition = get_weather_desc(code)
         
-        # Today's Prediction Sentence
-        st.markdown(f"**Today's Outlook:** {condition} with a temperature of {temp}°C.")
-
-        # Custom CSS for metrics (color is handled by global theme now)
-        st.markdown("""
-        <style>
-        [data-testid="stMetricLabel"] {
-            font-weight: 800 !important;
-            font-size: 0.9rem !important;
-            opacity: 1 !important;
-        }
-        [data-testid="stMetricValue"] {
-            color: #00d4ff !important;
-        }
-        </style>
+        # 1. Glassmorphic Current Weather Card
+        st.markdown(f"""
+            <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); margin-bottom: 25px;">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="font-size: 48px;">{condition.split()[0] if 'cloudy' not in condition.lower() else '☁️'}</div>
+                    <div>
+                        <div style="font-size: 14px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Current Condition</div>
+                        <div style="font-size: 24px; font-weight: 800; color: #f8fafc;">{condition}</div>
+                        <div style="font-size: 13px; color: #60a5fa;">Montgomery, AL • Live Update</div>
+                    </div>
+                </div>
+            </div>
         """, unsafe_allow_html=True)
 
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("**🌡️ Temp**", f"{temp} °C")
+            st.metric("🌡️ Temperature", f"{temp} °C")
         with col2:
-            st.metric("**💧 Precip**", f"{precip} mm")
+            st.metric("💧 Precipitation", f"{precip} mm")
         with col3:
-            st.metric("**💨 Wind**", f"{wind} km/h")
+            st.metric("💨 Wind Speed", f"{wind} km/h")
         with col4:
-            st.metric("**🌫️ Humidity**", f"{humidity} %")
+            st.metric("🌫️ Humidity", f"{humidity} %")
             
-        st.markdown("---")
-        st.markdown("##### 📅 7-Day Forecast")
+        st.markdown("<br>", unsafe_allow_html=True)
         
+        # 2. Daily Forecast Table (Themed and Center Aligned)
+        st.markdown("##### 📅 7-Day Forecast (Montgomery)")
         daily = data.get("daily", {})
         if daily:
-            dates = daily.get("time", [])
-            max_temps = daily.get("temperature_2m_max", [])
-            min_temps = daily.get("temperature_2m_min", [])
-            precip_sums = daily.get("precipitation_sum", [])
-            codes = daily.get("weather_code", [])
-            descs = [get_weather_desc(c) for c in codes]
-            
             df_daily = pd.DataFrame({
-                "Date": dates,
-                "Condition": descs,
-                "Max (°C)": max_temps,
-                "Min (°C)": min_temps,
-                "Rain (mm)": precip_sums
+                "Date": daily.get("time", []),
+                "Condition": [get_weather_desc(c) for c in daily.get("weather_code", [])],
+                "Max Temp (°C)": daily.get("temperature_2m_max", []),
+                "Min Temp (°C)": daily.get("temperature_2m_min", []),
+                "Rainfall (mm)": daily.get("precipitation_sum", [])
             })
-            st.dataframe(df_daily, use_container_width=True, hide_index=True)
             
-        st.markdown("##### 🕒 24-Hour Rainfall Prediction")
+            # CSS for center-aligning table text
+            st.markdown("""
+                <style>
+                    [data-testid="stDataFrame"] td { text-align: center !important; }
+                    [data-testid="stDataFrame"] th { text-align: center !important; }
+                </style>
+            """, unsafe_allow_html=True)
+            
+            st.dataframe(df_daily, use_container_width=True, hide_index=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # 3. Two Charts Arrangement
+        st.markdown("##### 🕒 Hourly Precipitation & Temperature")
         hourly = data.get("hourly", {})
         if hourly:
-            times = hourly.get("time", [])[:24]
+            times = [t.replace("T", " ") for t in hourly.get("time", [])[:24]]
             precips = hourly.get("precipitation", [])[:24]
             probs = hourly.get("precipitation_probability", [])[:24]
-            
-            df_hourly = pd.DataFrame({
-                "Time": [t.replace("T", " ") for t in times],
-                "Rainfall (mm)": precips,
-                "Probability (%)": probs
-            })
-            st.line_chart(df_hourly.set_index("Time")["Rainfall (mm)"])
+            temps = hourly.get("temperature_2m", [])[:24]
+
+            chart_col1, chart_col2 = st.columns(2)
+
+            with chart_col1:
+                # Rainfall Probability & Amount (Bar + Line)
+                fig_precip = go.Figure()
+                fig_precip.add_trace(go.Bar(
+                    x=times, y=precips, name="Rain (mm)", 
+                    marker_color="#22d3ee", opacity=0.7
+                ))
+                fig_precip.add_trace(go.Scatter(
+                    x=times, y=probs, name="Prob (%)", 
+                    line=dict(color="#facc15", width=2), yaxis="y2"
+                ))
+                fig_precip.update_layout(
+                    title="Rainfall Forecast",
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    height=300,
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    yaxis=dict(title="Rainfall (mm)", gridcolor="rgba(255,255,255,0.05)"),
+                    yaxis2=dict(title="Probability (%)", overlaying="y", side="right", range=[0, 100], showgrid=False)
+                )
+                st.plotly_chart(fig_precip, use_container_width=True, config={'displayModeBar': False})
+
+            with chart_col2:
+                # Temperature Trend
+                fig_temp = px.line(
+                    x=times, y=temps, 
+                    labels={"x": "Time", "y": "Temp (°C)"},
+                    title="Temperature Trend"
+                )
+                fig_temp.update_traces(line_color="#60a5fa", line_width=3, fill='tozeroy', fillcolor='rgba(96,165,250,0.1)')
+                fig_temp.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    height=300,
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    xaxis=dict(gridcolor="rgba(255,255,255,0.05)"),
+                    yaxis=dict(gridcolor="rgba(255,255,255,0.05)")
+                )
+                st.plotly_chart(fig_temp, use_container_width=True, config={'displayModeBar': False})
             
     except Exception as e:
-        st.warning(f"Could not load weather data: {e}")
+        st.error(f"⚠️ Could not load weather data: {e}")

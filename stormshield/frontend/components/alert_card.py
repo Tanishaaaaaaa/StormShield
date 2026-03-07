@@ -46,40 +46,40 @@ def render_alert_card(alert: dict, forecast: dict | None) -> None:
     card_html = f"""
     <div style="
         background: {cfg['bg']};
-        border: 1.5px solid {cfg['border']};
-        border-radius: 14px;
-        padding: 18px 20px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+        border: 1.2px solid {cfg['border']};
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 6px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     ">
-        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px;">
-            <span style="font-size:24px;">{cfg['emoji']}</span>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <span style="font-size:18px;">{cfg['emoji']}</span>
             <div>
-                <div style="font-size:16px; font-weight:700; color:{cfg['border']}; letter-spacing:0.5px;">
+                <div style="font-size:13px; font-weight:700; color:{cfg['border']}; letter-spacing:0.3px; line-height:1.2;">
                     {cfg['label']}
                 </div>
-                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
-                    Alert Level: {level}
+                <div style="font-size:10px; color:#94a3b8; margin-top:0px;">
+                    Level: {level}
                 </div>
             </div>
         </div>
-        <div style="display:flex; gap:20px; margin-bottom:14px; justify-content:center; align-items:center;">
+        <div style="display:flex; gap:12px; margin-bottom:8px; justify-content:center; align-items:center;">
             <div style="text-align:center;">
-                <div style="font-size:26px; font-weight:800; color:{cfg['border']};">{pred_ft:.2f} ft</div>
-                <div style="font-size:10px; color:#94a3b8;">Predicted T+30</div>
+                <div style="font-size:20px; font-weight:800; color:{cfg['border']};">{pred_ft:.2f} ft</div>
+                <div style="font-size:9px; color:#94a3b8;">Predicted T+30</div>
             </div>
             <div style="text-align:center;">
-                <div style="font-size:26px; font-weight:800; color:{cfg['text']};">{ror:+.3f}</div>
-                <div style="font-size:10px; color:#94a3b8;">ft / 15 min</div>
+                <div style="font-size:20px; font-weight:800; color:{cfg['text']};">{ror:+.3f}</div>
+                <div style="font-size:9px; color:#94a3b8;">ft / 15 min</div>
             </div>
         </div>
         <div style="
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 13px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11.5px;
             color: {cfg['text']};
-            line-height: 1.6;
+            line-height: 1.4;
             font-style: italic;
         ">
             {alert_text}

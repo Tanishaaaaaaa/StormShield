@@ -11,8 +11,8 @@ import streamlit as st
 def render_simulation_panel(backend_url: str, alert: dict | None = None) -> None:
     """Interactive tree-addition slider with live peak reduction calculation."""
     st.markdown("""
-    <div style="font-size:13px; color:#94a3b8; margin-bottom:8px; letter-spacing:0.3px;">
-        🌳 <b style="color:#4ade80;">GREEN INFRASTRUCTURE SIMULATOR</b>
+    <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; letter-spacing:0.2px;">
+        🌳 <b style="color:#4ade80;">GREEN SIMULATOR</b>
     </div>
     """, unsafe_allow_html=True)
 
@@ -52,14 +52,14 @@ def render_simulation_panel(backend_url: str, alert: dict | None = None) -> None
             st.metric(
                 "Peak Reduction",
                 f"{peak_red:.3f} ft",
-                delta=f"-{runoff_pct:.2f}% runoff",
+                delta=f"-{runoff_pct:.1f}%",
                 delta_color="inverse",
             )
         with col2:
             st.metric(
-                "Runoff After Trees",
+                "Runoff",
                 f"{new_runoff:.1f} mm",
-                delta=f"from {base_runoff:.0f} mm",
+                delta=f"from {base_runoff:.0f}",
                 delta_color="inverse",
             )
             
@@ -68,13 +68,12 @@ def render_simulation_panel(backend_url: str, alert: dict | None = None) -> None
 
 
         # Visual bar
-        efficacy = min(peak_red / 0.5, 1.0)  # normalise to max 0.5 ft
+        efficacy = min(peak_red / 0.5, 1.0)
         bar_html = f"""
-        <div style="margin-top:6px;">
-            <div style="font-size:11px; color:#64748b; margin-bottom:3px;">Flood Mitigation Efficacy</div>
-            <div style="background:#1e293b; border-radius:4px; height:6px; overflow:hidden;">
+        <div style="margin-top:3px;">
+            <div style="background:#1e293b; border-radius:3px; height:4px; overflow:hidden;">
                 <div style="background:linear-gradient(90deg,#4ade8088,#4ade80);
-                    width:{efficacy*100:.1f}%; height:100%; border-radius:4px;"></div>
+                    width:{efficacy*100:.1f}%; height:100%; border-radius:3px;"></div>
             </div>
         </div>
         """

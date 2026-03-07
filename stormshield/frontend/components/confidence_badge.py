@@ -25,33 +25,28 @@ def render_confidence_badge(confidence_score: float) -> None:
     text_color = "#000000" if is_light else "#ffffff"
 
     badge_html = f"""
-    <div style="margin: 6px 0 10px 0;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-size:12px; color:{text_color}; font-weight:800; letter-spacing:0.5px;">
+    <div style="margin: 4px 0 6px 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+            <span style="font-size:10.5px; color:{text_color}; font-weight:800; letter-spacing:0.3px;">
                 SYSTEM CONFIDENCE SCORE
             </span>
             <span style="
                 background:{color};
                 color:#000;
-                font-size:11px;
+                font-size:10px;
                 font-weight:700;
-                padding:2px 8px;
-                border-radius:20px;
+                padding:1px 6px;
+                border-radius:10px;
             ">{label} · {pct}%</span>
         </div>
-        <div style="background:#1e293b; border-radius:6px; height:8px; overflow:hidden; margin-bottom:4px;">
+        <div style="background:#1e293b; border-radius:4px; height:6px; overflow:hidden;">
             <div style="
                 background: linear-gradient(90deg, {color}88, {color});
                 width:{pct}%;
                 height:100%;
-                border-radius:6px;
+                border-radius:4px;
                 transition: width 0.5s ease;
             "></div>
-        </div>
-        <div style="font-size:10px; color:#64748b; line-height:1.4;">
-            <b>Based on:</b><br/>
-            • Model residual variance<br/>
-            • Trend consistency
         </div>
     </div>
     """
