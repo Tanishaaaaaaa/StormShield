@@ -38,137 +38,155 @@ def toggle_theme():
     st.session_state["theme"] = "light" if st.session_state["theme"] == "dark" else "dark"
 
 DARK_THEME = """
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); }
+    50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+    100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); }
+}
+
 .stApp {
-    background: linear-gradient(160deg, #020617 0%, #0f172a 40%, #0a0f1e 100%);
-    color: #ffffff;
+    background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 50%, #020617 100%);
+    color: #f8fafc;
 }
 div[data-testid="stWidgetLabel"] p, label p {
-    color: #ffffff !important;
+    color: #e2e8f0 !important;
+    font-weight: 600 !important;
 }
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-    border-right: 1px solid #1e293b;
+    background: linear-gradient(180deg, #020617 0%, #0f172a 100%) !important;
+    border-right: 1px solid #1e293b !important;
 }
+section[data-testid="stSidebar"] hr {
+    border-color: #312e81 !important;
+}
+
+/* Glassmorphism for Tabs */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-    background: transparent;
-    border-bottom: 1px solid #1e293b;
-    padding-bottom: 0;
+    gap: 12px;
+    background: rgba(15, 23, 42, 0.4);
+    padding: 10px 10px 0 10px;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 2px solid #1e293b;
 }
 .stTabs [data-baseweb="tab"] {
-    background: rgba(30,41,59,0.5);
-    border: 1px solid #1e293b;
-    border-radius: 8px 8px 0 0;
+    background: transparent;
+    border: none !important;
     color: #94a3b8;
-    font-weight: 500;
-    font-size: 13px;
-    padding: 8px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
 .stTabs [aria-selected="true"] {
-    background: rgba(59,130,246,0.15) !important;
-    border-color: #3b82f6 !important;
-    color: #60a5fa !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+    color: #facc15 !important; /* Lightning Yellow */
+    border-bottom: 2px solid #facc15 !important;
 }
+
+/* Stunning Metrics */
 [data-testid="stMetricValue"] {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #f1f5f9 !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #22d3ee !important; /* Electric Cyan */
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
 }
 [data-testid="stMetricLabel"] {
-    font-weight: 800 !important;
-}
-.main-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 0 8px 0;
-}
-.header-title {
-    font-size: 26px;
-    font-weight: 800;
-    background: linear-gradient(90deg, #60a5fa, #818cf8, #a78bfa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
-}
-.header-sub {
-    font-size: 12px;
-    color: #64748b;
-    margin-top: 2px;
-}
-.query-subtitle {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 11px !important;
     color: #94a3b8 !important;
 }
-[data-testid="stAlert"] p {
-    color: #ffffff !important;
+
+.main-header {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(8px);
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 20px;
 }
-.stChatMessage { background: rgba(15,23,42,0.7) !important; border-radius: 12px !important; }
+.header-title {
+    font-size: 32px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #60a5fa 0%, #22d3ee 50%, #facc15 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.header-sub {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+@keyframes pulse-live {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.live-badge {
+    background: #ef4444;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 900;
+    animation: pulse-live 2s infinite ease-in-out;
+    margin-right: 8px;
+}
 """
 
 LIGHT_THEME = """
 .stApp {
-    background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 40%, #e2e8f0 100%);
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
     color: #0f172a;
 }
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-    border-right: 1px solid #cbd5e1;
+    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
+    border-right: 1px solid #e2e8f0 !important;
 }
 .stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-    background: transparent;
-    border-bottom: 1px solid #cbd5e1;
-    padding-bottom: 0;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 8px 8px 0 8px;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 2px solid #e2e8f0;
 }
 .stTabs [data-baseweb="tab"] {
-    background: rgba(226,232,240,0.5);
-    border: 1px solid #cbd5e1;
-    border-radius: 8px 8px 0 0;
-    color: #475569;
-    font-weight: 500;
-    font-size: 13px;
-    padding: 8px 20px;
+    color: #64748b;
+    font-weight: 600;
 }
 .stTabs [aria-selected="true"] {
-    background: rgba(59,130,246,0.1) !important;
-    border-color: #2563eb !important;
+    background: #ffffff !important;
     color: #2563eb !important;
+    border-bottom: 2px solid #2563eb !important;
 }
+
 [data-testid="stMetricValue"] {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    color: #0f172a !important; /* Black/Dark slate for values */
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #0369a1 !important;
 }
 [data-testid="stMetricLabel"] {
-    color: #0f172a !important;
-    font-weight: 800 !important;
+    color: #64748b !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-.query-subtitle {
-    color: #000000 !important;
-}
+
 .main-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 0 8px 0;
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
 }
 .header-title {
-    font-size: 26px;
-    font-weight: 800;
-    background: linear-gradient(90deg, #2563eb, #4f46e5, #7c3aed);
+    font-size: 32px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #0284c7, #2563eb);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
 }
-.header-sub {
-    font-size: 12px;
-    color: #475569;
-    margin-top: 2px;
+.stChatMessage { 
+    background: white !important; 
+    border-radius: 16px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
 }
-.stChatMessage { background: rgba(241,245,249,0.7) !important; border-radius: 12px !important; }
-[data-testid="stChatInput"] { background-color: #e2e8f0 !important; border-radius: 8px !important; }
-[data-testid="stChatInput"] * { background-color: transparent !important; color: #0f172a !important; }
-[data-testid="stChatInput"] textarea { background-color: transparent !important; }
 """
 
 COMMON_STYLE = """
@@ -206,53 +224,252 @@ def fetch_all_data():
     return sensor, history, forecast, alert, alert_hist, geo, ema, calls, health
 
 
-# ── Sidebar ────────────────────────────────────────────────────────────────
+# ── Clear callback — runs BEFORE script re-renders (most reliable approach) ──
+def _clear_lookup():
+    """Called by on_click before the next render cycle. State is already clean when sidebar draws."""
+    st.session_state.pop("lookup_result", None)
+    st.session_state.pop("last_address", None)
+    st.session_state["address_input"] = ""
+
+
+# ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
+    # ── Compact global CSS ───────────────────────────────────────────────────
     st.markdown("""
-    <div style="text-align:center; padding:16px 0 10px;">
-        <div style="font-size:40px;">🛡️</div>
-        <div style="font-size:16px; font-weight:700; color:#60a5fa;">StormShield AI</div>
-        <div style="font-size:11px; color:#64748b;">Montgomery's Smart Flood & Weather Guardian</div>
-    </div>
-    <hr style="border-color:#1e293b;">
+    <style>
+    /* ── Compact element spacing ─────────────────────────────────────────── */
+    section[data-testid="stSidebar"] .block-container { padding-top: 0 !important; }
+    section[data-testid="stSidebar"] .element-container { margin-bottom: 2px !important; }
+    section[data-testid="stSidebar"] hr { margin: 6px 0 !important; }
+    /* Smaller text input */
+    section[data-testid="stSidebar"] [data-testid="stTextInput"] input {
+        font-size: 11px !important; padding: 5px 8px !important; height: 30px !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stTextInput"] label { font-size: 11px !important; }
+    /* Smaller selectbox matching text input */
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] label {
+        font-size: 11px !important; font-weight: 600 !important;
+    }
+    section[data-testid="stSidebar"] [data-baseweb="select"] > div {
+        font-size: 11px !important; min-height: 30px !important; height: 30px !important;
+    }
+    section[data-testid="stSidebar"] [data-baseweb="select"] div { font-size: 11px !important; }
+    /* Clear button — red with visible white text */
+    section[data-testid="stSidebar"] .stButton button {
+        font-size: 10px !important; padding: 1px 10px !important;
+        height: 24px !important; min-height: 24px !important;
+        background: #dc2626 !important; color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        border: none !important; border-radius: 6px !important;
+        font-weight: 700 !important; line-height: 22px !important;
+    }
+    section[data-testid="stSidebar"] .stButton button:hover {
+        background: #991b1b !important; box-shadow: 0 0 6px rgba(220,38,38,0.5) !important;
+    }
+    section[data-testid="stSidebar"] .stButton button p,
+    section[data-testid="stSidebar"] .stButton button span {
+        color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-size: 10px !important;
+    }
+    div.stTooltip p { font-size: 10px !important; }
+    /* Reduce vertical padding in sidebar sections */
+    section[data-testid="stSidebar"] .stSelectbox { margin-bottom: 4px !important; }
+    section[data-testid="stSidebar"] .stTextInput { margin-bottom: 2px !important; }
+    section[data-testid="stSidebar"] .stMarkdown { margin-bottom: 2px !important; }
+    </style>
     """, unsafe_allow_html=True)
 
+    # ── Logo ─────────────────────────────────────────────────────────────────
+    st.markdown("""
+    <div style="text-align:center; padding:8px 0 6px;">
+        <div style="font-size:32px;">🛡️</div>
+        <div style="font-size:14px; font-weight:700; color:#60a5fa; line-height:1.2;">StormShield AI</div>
+        <div style="font-size:10px; color:#64748b;">Montgomery's Smart Flood &amp; Weather Guardian</div>
+    </div>
+    <hr style="border-color:#1e293b; margin:6px 0;">
+    """, unsafe_allow_html=True)
+
+    # ── Refresh Interval ─────────────────────────────────────────────────────
     refresh_label = st.selectbox(
         "🔄 Refresh Interval",
         options=list(REFRESH_OPTIONS.keys()),
-        index=1,  # default 60s
+        index=2,
+        label_visibility="visible",
     )
     refresh_seconds = REFRESH_OPTIONS[refresh_label]
     st.session_state["refresh_interval"] = refresh_seconds
 
-    st.markdown("---")
-    st.markdown("**📍 Address Lookup**")
-    address = st.text_input("Enter address to check FEMA zone", placeholder="123 Main St, Montgomery AL")
+    st.markdown('<hr style="border-color:#1e293b; margin:6px 0;">', unsafe_allow_html=True)
+
+    # ── Simulation Mode ──────────────────────────────────────────────────────
+    st.markdown('<div style="font-size:11px; font-weight:700; margin-bottom:3px;">🕹️ Simulation Mode</div>',
+                unsafe_allow_html=True)
+    sim_mode_val = st.selectbox(
+        "Simulation Mode",
+        options=["Live Data", "Moderate Rain", "Heavy Rain", "Flood Situation"],
+        index=0,
+        label_visibility="collapsed",
+        key="sim_mode"
+    )
+
+    st.markdown('<hr style="border-color:#1e293b; margin:6px 0;">', unsafe_allow_html=True)
+
+    # ── Address Lookup ───────────────────────────────────────────────────────
+    st.markdown('<div style="font-size:11px; font-weight:700; margin-bottom:3px;">📍 Address Lookup</div>',
+                unsafe_allow_html=True)
+
+    address = st.text_input(
+        "Address",
+        label_visibility="collapsed",
+        placeholder="123 Main St, Montgomery AL",
+        key="address_input",
+        help="Type an address in Montgomery, AL for flood risk and weather",
+    )
+
+    st.markdown("""
+    <div style="font-size:9px; color:#64748b; margin-top:-4px; margin-bottom:4px;">
+        Examples: <i>101 S Lawrence St</i>, <i>Montgomery Zoo</i>, <i>Maxwell AFB</i>
+    </div>
+    """, unsafe_allow_html=True)
+
     if address:
-        st.info("Geocoding is available via NOAA GridPoint lookup. Enter a full Montgomery, AL address.")
+        if "last_address" not in st.session_state or st.session_state["last_address"] != address:
+            with st.spinner("📍 Looking up..."):
+                try:
+                    resp = httpx.post(
+                        f"{BACKEND_URL}/api/geodata/lookup",
+                        json={"address": address}, timeout=12
+                    )
+                    if resp.status_code == 200:
+                        res = resp.json()
+                        if "error" not in res:
+                            st.session_state["lookup_result"] = res
+                            st.session_state["last_address"] = address
+                        else:
+                            st.error(res["error"])
+                    else:
+                        st.error("Lookup service unavailable")
+                except Exception:
+                    st.error("Lookup timed out. Try again.")
 
-    st.markdown("---")
+    # ── FIXED POSITION SLOTS (Absolute protection against Streamlit DOM bugs) ──
+    button_slot = st.empty()
+    content_slot = st.empty()
 
-    # Backend health
+    # ── Clear button uses on_click callback — fires BEFORE next render ───────
+    has_result = (
+        "lookup_result" in st.session_state
+        and st.session_state["lookup_result"] is not None
+    )
+    if has_result:
+        button_slot.button(
+            "🧹 Clear",
+            key="clear_lookup_btn",
+            help="Resets address input, removes map marker, clears the risk report",
+            on_click=_clear_lookup,
+        )
+    else:
+        # Explicitly clear the button slot if there's no result
+        button_slot.empty()
+
+    # ── Combine bottom elements into a SINGLE markdown block ────────
+    sidebar_html = ""
+
+    if has_result:
+        res = st.session_state["lookup_result"]
+        zone = res.get("fema_zone", {})
+        weather = res.get("weather", {})
+        sidebar_html += f"""
+        <div style="background:rgba(34,211,238,0.1); border:1px solid #22d3ee;
+                    border-radius:12px; padding:12px; margin-top:6px; backdrop-filter:blur(4px);">
+            <div style="font-size:11px; font-weight:800; color:#22d3ee; margin-bottom:6px; letter-spacing:0.5px;">⭐ LOCAL RISK REPORT</div>
+            <div style="font-size:10px; color:#f1f5f9; margin-bottom:8px; line-height:1.4;">{res.get('address')}</div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span style="font-size:10px; color:#94a3b8;">FEMA Zone</span>
+                <span style="font-size:10px; font-weight:700; color:#facc15;">{zone.get('zone')} ({zone.get('risk_level')} Risk)</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span style="font-size:10px; color:#94a3b8;">Forecast</span>
+                <span style="font-size:10px; font-weight:700; color:#f8fafc;">{weather.get('summary')}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="font-size:10px; color:#94a3b8;">Rain Rate</span>
+                <span style="font-size:10px; font-weight:700; color:#34d399;">{weather.get('local_precip_mm', 0)} mm</span>
+            </div>
+        </div>
+        """
+
+    # Model / Health status
+    sidebar_html += '<hr style="border-color:#1e293b; margin:6px 0;">'
     health_data = fetch_json(f"{BACKEND_URL}/health") or {}
     model_ok = health_data.get("model_loaded", False)
     cache_age = health_data.get("cache_age_seconds", 0)
+    status_color = "#22c55e" if model_ok else "#f59e0b"
+    status_label = "✅ Model loaded" if model_ok else "⚠️ Synthetic mode"
+    
+    sidebar_html += f"""
+    <div style="padding:10px 12px; background:rgba(15,23,42,0.6); border-radius:12px; border:1px solid #1e293b; margin-top:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-size:10px; color:{status_color}; font-weight:700;">{status_label}</span>
+            <span style="font-size:9px; color:#64748b;">Cache: {cache_age}s</span>
+        </div>
+        <div style="font-size:9px; color:#475569; letter-spacing:0.5px;">SYNC: {datetime.now(timezone.utc).strftime("%H:%M:%S")} UTC</div>
+    </div>
+    """
 
-    col_a, col_b = st.columns(2)
-    with col_a:
-        color = "#22c55e" if model_ok else "#f59e0b"
-        st.markdown(f'<div style="font-size:11px; color:{color};">{"✅ Model loaded" if model_ok else "⚠️ Synthetic mode"}</div>', unsafe_allow_html=True)
-    with col_b:
-        st.markdown(f'<div style="font-size:11px; color:#64748b;">Cache: {cache_age}s ago</div>', unsafe_allow_html=True)
-
-    st.markdown(f'<div style="font-size:10px; color:#475569; margin-top:12px;">Last updated: {datetime.now(timezone.utc).strftime("%H:%M:%S")} UTC</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="font-size:10px; color:#334155;">USGS 01648000 · Sligo Creek · Montgomery, AL</div>', unsafe_allow_html=True)
+    # Always write into the fixed slot
+    content_slot.markdown(sidebar_html, unsafe_allow_html=True)
 
 
 # ── Page Header ────────────────────────────────────────────────────────────
 
 sensor, history, forecast, alert, alert_hist, geo, ema, calls, health = fetch_all_data()
+
+# ── Apply Simulation Overrides ──────────────────────────────────────────────
+sim_mode = st.session_state.get("sim_mode", "Live Data")
+if sim_mode != "Live Data":
+    from datetime import datetime, timezone, timedelta
+    now_utc = datetime.now(timezone.utc)
+    now_iso = now_utc.isoformat()
+    
+    if sim_mode == "Moderate Rain":
+        alert = {"level": "YELLOW", "alert_text": "Montgomery River level is normal but rising slowly. Expect runoff from moderate rain.", "predicted_level_ft": 145.9, "rate_of_rise_ft_per_15m": 0.2}
+        sensor = {"water_level_ft": 145.5, "rate_of_rise_ft_per_15m": 0.2, "timestamp": now_iso, "discharge_cfs": 4500}
+        forecast = {"current": {"precip_mm": 15.0, "summary": "Moderate Rain", "temp_c": 19.5}, "hourly": forecast.get("hourly", [])}
+        alert_hist = [{"level": "YELLOW", "predicted_level_ft": 145.5, "rate_of_rise_ft_per_15m": 0.2, "generated_at": now_iso}] + alert_hist[:4]
+        ema = [{"title": "Weather Advisory", "body": "Moderate rainfall expected throughout the day. Minor ponding on roads possible."}]
+        calls = [{"district": "North", "incident_type": "Traffic Hazard", "count": 1}]
+        
+    elif sim_mode == "Heavy Rain":
+        alert = {"level": "YELLOW", "alert_text": "Heavy rain in effect. Rising river levels and localized street flooding expected.", "predicted_level_ft": 149.1, "rate_of_rise_ft_per_15m": 0.8}
+        sensor = {"water_level_ft": 147.5, "rate_of_rise_ft_per_15m": 0.8, "timestamp": now_iso, "discharge_cfs": 18500}
+        forecast = {"current": {"precip_mm": 45.0, "summary": "Heavy Rain", "temp_c": 18.0}, "hourly": forecast.get("hourly", [])}
+        alert_hist = [{"level": "YELLOW", "predicted_level_ft": 147.5, "rate_of_rise_ft_per_15m": 0.8, "generated_at": now_iso}] + alert_hist[:4]
+        ema = [{"title": "Flash Flood Watch", "body": "A flash flood watch is in effect for Montgomery county until 8 PM."}]
+        calls = [{"district": "Downtown", "incident_type": "Water Rescue", "count": 2}, {"district": "East", "incident_type": "Flooded Roadway", "count": 3}]
+        
+    elif sim_mode == "Flood Situation":
+        alert = {"level": "RED", "alert_text": "CRITICAL: Major river flooding identified. Evacuation warnings in effect for low-lying areas.", "predicted_level_ft": 155.0, "rate_of_rise_ft_per_15m": 1.5}
+        sensor = {"water_level_ft": 152.0, "rate_of_rise_ft_per_15m": 1.5, "timestamp": now_iso, "discharge_cfs": 65000}
+        forecast = {"current": {"precip_mm": 80.0, "summary": "Torrential Downpours", "temp_c": 17.5}, "hourly": forecast.get("hourly", [])}
+        alert_hist = [{"level": "RED", "predicted_level_ft": 152.0, "rate_of_rise_ft_per_15m": 1.5, "generated_at": now_iso}] + alert_hist[:4]
+        ema = [{"title": "Flash Flood Warning", "body": "Flash flood warning for Montgomery. Seek higher ground immediately."}]
+        calls = [
+            {"district": "North", "incident_type": "Water Rescue", "count": 15},
+            {"district": "Downtown", "incident_type": "Flooded Roadway", "count": 12},
+            {"district": "South", "incident_type": "Evacuation", "count": 7}
+        ]
+        
+    # Generate realistic historical chart data sloping upwards to current level
+    history = [
+        {
+            "timestamp": (now_utc - timedelta(minutes=15 * i)).isoformat(), 
+            "water_level_ft": round(sensor["water_level_ft"] - (i * sensor["rate_of_rise_ft_per_15m"]), 2)
+        } 
+        for i in range(16)
+    ]
+
+lookup_pnt = st.session_state.get("lookup_result")
 
 level = alert.get("level", "GREEN")
 level_emoji = {"RED": "🔴", "YELLOW": "🟡", "GREEN": "🟢"}.get(level, "🟢")
@@ -261,11 +478,20 @@ header_col, toggle_col = st.columns([0.80, 0.20], vertical_alignment="center")
 
 with header_col:
     st.markdown(f"""
-    <div class="main-header">
-        <div style="font-size:48px;">🛡️</div>
-        <div>
-            <div class="header-title">StormShield AI</div>
-            <div class="header-sub">Montgomery's Smart Flood & Weather Guardian</div>
+    <div class="main-header" style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <div style="font-size:54px; filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.5));">🛡️</div>
+            <div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span class="header-title">StormShield AI</span>
+                    <span class="live-badge">● LIVE</span>
+                </div>
+                <div class="header-sub">Montgomery's Smart Flood & Weather Guardian</div>
+            </div>
+        </div>
+        <div style="text-align:right; background:rgba(15,23,42,0.4); padding:10px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:12px; font-weight:800; color:#facc15; letter-spacing:1px;">{level} STATUS</div>
+            <div style="font-size:10px; color:#64748b; margin-top:2px;">{datetime.now(timezone.utc).strftime("%b %d, %H:%M:%S")} UTC</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -317,7 +543,7 @@ with tab1:
     # LEFT COLUMN — Map + Chart
     with col1:
         st.markdown("##### 🗺️ Montgomery Flood Zone Map")
-        render_map(geo, ema, calls)
+        render_map(geo, ema, calls, highlight_point=lookup_pnt)
 
         st.markdown("##### 📈 Water Level History & Forecast")
         render_gauge_chart(history, forecast)
@@ -438,5 +664,8 @@ with tab4:
 
 # ── Auto-rerun loop ────────────────────────────────────────────────────────
 refresh = st.session_state.get("refresh_interval", 60)
-time.sleep(refresh)
-st.rerun()
+from streamlit_autorefresh import st_autorefresh
+# st_autorefresh runs non-blocking, so the script finishes instantly and the 
+# browser triggers the rerun. This prevents the "greyed out" stale element bug.
+st_autorefresh(interval=refresh * 1000, key="data_refresh")
+

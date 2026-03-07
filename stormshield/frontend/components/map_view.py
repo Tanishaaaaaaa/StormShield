@@ -20,11 +20,23 @@ ZONE_COLORS = {
 }
 
 
-def render_map(flood_zones: dict, ema_alerts: list[dict], calls_911: list[dict]) -> None:
+def render_map(
+    flood_zones: dict, 
+    ema_alerts: list[dict], 
+    calls_911: list[dict],
+    highlight_point: dict | None = None
+) -> None:
     """Render the Leaflet choropleth flood map with zone overlays."""
+    # Center map on highlighted point if provided, else default to central Montgomery
+    center = [32.3768, -86.3006]
+    zoom = 12
+    if highlight_point and "lat" in highlight_point:
+        center = [highlight_point["lat"], highlight_point["lon"]]
+        zoom = 16
+
     m = folium.Map(
-        location=[32.3768, -86.3006],
-        zoom_start=12,
+        location=center,
+        zoom_start=zoom,
         tiles="CartoDB positron",
     )
 
@@ -95,6 +107,15 @@ def render_map(flood_zones: dict, ema_alerts: list[dict], calls_911: list[dict])
                 tooltip=f"911: {call.get('incident_type','Incident')} × {call.get('count',0)} ({district})",
             ).add_to(m)
 
+    # Highlighted Point (Address Lookup)
+    if highlight_point and "lat" in highlight_point:
+        folium.Marker(
+            location=[highlight_point["lat"], highlight_point["lon"]],
+            popup=f"<b>Looked up Address:</b><br>{highlight_point.get('address', 'Unknown location')}",
+            tooltip="Click for details",
+            icon=folium.Icon(color="red", icon="home", prefix="fa"),
+        ).add_to(m)
+
     # Legend
     legend_html = """
     <div style="position: fixed; bottom: 30px; left: 30px; z-index: 1000;
@@ -112,4 +133,11 @@ def render_map(flood_zones: dict, ema_alerts: list[dict], calls_911: list[dict])
 
     folium.LayerControl().add_to(m)
 
-    st_folium(m, width=None, height=420, returned_objects=[])
+    # Use a stable key so Streamlit reuses the map widget instead of destroying/recreating it
+    # Key changes only when the highlighted point changes — not on every auto-refresh
+    if highlight_point and "lat" in highlight_point:
+        map_key = f"map_{round(highlight_point['lat'], 4)}_{round(highlight_point['lon'], 4)}"
+    else:
+        map_key = "map_base"
+
+    st_folium(m, width=None, height=420, returned_objects=[], key=map_key)

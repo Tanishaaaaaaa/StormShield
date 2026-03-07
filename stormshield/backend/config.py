@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     # Frontend
     backend_url: str = "http://localhost:8000"
-    default_refresh_seconds: int = 60
+    default_refresh_seconds: int = 300
 
 
 settings = Settings()

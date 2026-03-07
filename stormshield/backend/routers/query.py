@@ -42,6 +42,8 @@ def post_query(body: QueryRequest) -> QueryResponse:
     )
     nws_alerts = cache.get("nws_alerts") or []
     flood_zones = cache.get("flood_zones") or {"type": "FeatureCollection", "features": []}
+    ema_alerts = cache.get("ema_alerts") or []
+    calls_911 = cache.get("calls_911") or []
 
     context = QueryContext(
         sensor=sensor,
@@ -49,6 +51,8 @@ def post_query(body: QueryRequest) -> QueryResponse:
         alert=alert,
         nws_alerts=nws_alerts,
         flood_zones=flood_zones,
+        ema_alerts=ema_alerts,
+        calls_911=calls_911,
     )
 
     return answer_query(body.question, context, history=body.history)

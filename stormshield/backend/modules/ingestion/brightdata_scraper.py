@@ -99,16 +99,17 @@ def _download_flood_data(url: str, password: str) -> dict | None:
             return None
 
 
-def scrape_flood_zones(password: str = "") -> dict:
+def scrape_flood_zones(password: str = "", force: bool = False) -> dict:
     """
     Scrape complete FEMA flood zone dataset.
     Uses high-capacity proxy download for 20MB+ files.
     """
-    # Check cache first
-    cached = _load_json("flood_zones.json")
-    if isinstance(cached, dict) and len(cached.get("features", [])) > 10:
-        logger.info("Using cached flood_zones.json with %d features.", len(cached["features"]))
-        return cached
+    # Check cache first unless forced
+    if not force:
+        cached = _load_json("flood_zones.json")
+        if isinstance(cached, dict) and len(cached.get("features", [])) > 10:
+            logger.info("Using cached flood_zones.json with %d features.", len(cached["features"]))
+            return cached
 
     url = "https://gis.montgomeryal.gov/server/rest/services/OneView/Flood_Hazard_Areas/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson"
     data = _download_flood_data(url, password)

@@ -49,7 +49,7 @@ def render_query_panel(backend_url: str) -> None:
                     resp = httpx.post(
                         f"{backend_url}/api/query",
                         json={"question": question, "history": history},
-                        timeout=20,
+                        timeout=45.0,
                     )
                     resp.raise_for_status()
                     data = resp.json()
