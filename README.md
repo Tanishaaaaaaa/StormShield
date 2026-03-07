@@ -1,4 +1,4 @@
-# 🛡️ StormShield AI (MoCo-Sentinel)
+# 🛡️ StormShield AI
 **World Wide Vibes Hackathon Submission**
 
 **StormShield AI** is a real-time flood prediction and civic alert system designed for Montgomery, Alabama. It serves as a smart guardian against weather anomalies, leveraging real-time data ingestion, machine learning, and generative AI to keep citizens safe and informed.
