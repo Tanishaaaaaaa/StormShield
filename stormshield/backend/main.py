@@ -13,6 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
 from backend.modules.cache import store as cache
 from backend.modules.prediction.model import XGBoostPredictor
+from backend.modules.database import init_db, save_flood_zones, get_flood_zones_geojson
+from backend.modules.cache.store import DATA_DIR
+import json
 from backend.scheduler import configure_jobs, job_poll_noaa, job_poll_usgs, scheduler, job_scrape_ema
 
 logging.basicConfig(
@@ -33,6 +36,20 @@ async def lifespan(app: FastAPI):
     # Load XGBoost model
     predictor.load_model(settings.model_path)
 
+    # Database Initialization & Sync
+    init_db()
+    
+    # Pre-load flood zones into DB if empty or stale
+    logger.info("Checking flood zones data layer...")
+    fz_path = DATA_DIR / "flood_zones.json"
+    if fz_path.exists():
+        # Check if DB has data, if not load it
+        existing = get_flood_zones_geojson()
+        if not existing.get("features"):
+            logger.info("Initializing database with flood zones from %s...", fz_path.name)
+            with open(fz_path) as f:
+                save_flood_zones(json.load(f))
+    
     # Seed cache from disk files
     cache.load_json_files()
 

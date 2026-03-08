@@ -19,6 +19,19 @@ ZONE_COLORS = {
     "D": "#95a5a6",    # Undetermined
 }
 
+@st.cache_data(show_spinner=False, ttl=600)
+def process_flood_zones(flood_zones: dict):
+    """Normalize GeoJSON properties and compute styles once."""
+    if not flood_zones or not flood_zones.get("features"):
+        return None
+        
+    for feature in flood_zones["features"]:
+        props = feature.get("properties", {})
+        new_props = {k.lower(): v for k, v in props.items()}
+        if "name" not in new_props:
+            new_props["name"] = f"Zone {new_props.get('fld_zone', 'Unknown')}"
+        feature["properties"] = new_props
+    return flood_zones
 
 def render_map(
     flood_zones: dict, 
@@ -38,19 +51,13 @@ def render_map(
         location=center,
         zoom_start=zoom,
         tiles="CartoDB positron",
+        prefer_canvas=True,  # GPU Accelerated rendering for large datasets
     )
 
     # FEMA flood zone GeoJSON overlay
-    if flood_zones and flood_zones.get("features"):
-        # Normalize property keys to lowercase so both stub and live data work
-        for feature in flood_zones["features"]:
-            props = feature.get("properties", {})
-            # Create a lowercase version of all keys
-            new_props = {k.lower(): v for k, v in props.items()}
-            # Specific fallback for 'name' which might be missing in live ArcGIS data
-            if "name" not in new_props:
-                new_props["name"] = f"Zone {new_props.get('fld_zone', 'Unknown')}"
-            feature["properties"] = new_props
+    processed_zones = process_flood_zones(flood_zones)
+    if processed_zones:
+        pass # Properties processed in cached helper
 
         def style_function(feature):
             zone = feature["properties"].get("fld_zone", "X")
@@ -63,7 +70,7 @@ def render_map(
             }
 
         folium.GeoJson(
-            flood_zones,
+            processed_zones,
             name="FEMA Flood Zones",
             style_function=style_function,
             tooltip=folium.GeoJsonTooltip(
@@ -134,11 +141,12 @@ def render_map(
 
     folium.LayerControl().add_to(m)
 
-    # Use a stable key so Streamlit reuses the map widget instead of destroying/recreating it
-    # Key changes only when the highlighted point changes — not on every auto-refresh
+    # Key is stable based on highlight_point to prevent unnecessary unmounts
+    # but still allows re-centering when a user searches a specific address.
     if highlight_point and "lat" in highlight_point:
         map_key = f"map_{round(highlight_point['lat'], 4)}_{round(highlight_point['lon'], 4)}"
     else:
-        map_key = "map_base"
+        # Static key for general monitoring to avoid destruction on every rerun
+        map_key = "map_base_monitoring"
 
     st_folium(m, width=None, height=420, returned_objects=[], key=map_key)

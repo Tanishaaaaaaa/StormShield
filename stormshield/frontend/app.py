@@ -309,6 +309,11 @@ def fetch_json(url: str) -> dict | list | None:
         return None
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def fetch_geo_data(url: str):
+    """Fetch large GeoJSON data with a longer TTL to prevent map reloads."""
+    return fetch_json(url)
+
 from concurrent.futures import ThreadPoolExecutor
 
 def fetch_all_data():
@@ -318,7 +323,6 @@ def fetch_all_data():
         "forecast": f"{BACKEND_URL}/api/forecast/current",
         "alert": f"{BACKEND_URL}/api/alert/current",
         "alert_hist": f"{BACKEND_URL}/api/alert/history?limit=20",
-        "geo": f"{BACKEND_URL}/api/geodata/flood-zones",
         "ema": f"{BACKEND_URL}/api/geodata/ema-alerts",
         "health": f"{BACKEND_URL}/health"
     }
@@ -332,12 +336,63 @@ def fetch_all_data():
     forecast = results.get("forecast") or {}
     alert = results.get("alert") or {}
     alert_hist = results.get("alert_hist") or []
-    geo = results.get("geo") or {}
+    geo = fetch_geo_data(f"{BACKEND_URL}/api/geodata/flood-zones") or {}
     ema = results.get("ema") or []
     calls = results.get("ema") or [] # reuse for demo
     health = results.get("health") or {}
     
     return sensor, history, forecast, alert, alert_hist, geo, ema, calls, health
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_simulation_overrides(sim_mode: str, now_iso: str, alert_base: dict, sensor_base: dict, forecast_base: dict, alert_hist_base: list):
+    """Compute and cache simulation overrides to allow fast switching."""
+    from datetime import datetime, timezone, timedelta
+    now_utc = datetime.fromisoformat(now_iso)
+    
+    alert = alert_base.copy()
+    sensor = sensor_base.copy()
+    forecast = forecast_base.copy()
+    alert_hist = alert_hist_base.copy()
+    ema = []
+    calls = []
+
+    if sim_mode == "Moderate Rain":
+        alert = {"level": "YELLOW", "alert_text": "Montgomery River level is normal but rising slowly. Expect runoff from moderate rain.", "predicted_level_ft": 145.9, "rate_of_rise_ft_per_15m": 0.2}
+        sensor = {"water_level_ft": 145.5, "rate_of_rise_ft_per_15m": 0.2, "timestamp": now_iso, "discharge_cfs": 4500}
+        forecast = {"current": {"precip_mm": 15.0, "summary": "Moderate Rain", "temp_c": 19.5}, "hourly": forecast.get("hourly", [])}
+        alert_hist = [{"level": "YELLOW", "predicted_level_ft": 145.5, "rate_of_rise_ft_per_15m": 0.2, "generated_at": now_iso}] + alert_hist[:4]
+        ema = [{"title": "Weather Advisory", "body": "Moderate rainfall expected throughout the day. Minor ponding on roads possible."}]
+        calls = [{"district": "North", "incident_type": "Traffic Hazard", "count": 1}]
+        
+    elif sim_mode == "Heavy Rain":
+        alert = {"level": "YELLOW", "alert_text": "Heavy rain in effect. Rising river levels and localized street flooding expected.", "predicted_level_ft": 149.1, "rate_of_rise_ft_per_15m": 0.8}
+        sensor = {"water_level_ft": 147.5, "rate_of_rise_ft_per_15m": 0.8, "timestamp": now_iso, "discharge_cfs": 18500}
+        forecast = {"current": {"precip_mm": 45.0, "summary": "Heavy Rain", "temp_c": 18.0}, "hourly": forecast.get("hourly", [])}
+        alert_hist = [{"level": "YELLOW", "predicted_level_ft": 147.5, "rate_of_rise_ft_per_15m": 0.8, "generated_at": now_iso}] + alert_hist[:4]
+        ema = [{"title": "Flash Flood Watch", "body": "A flash flood watch is in effect for Montgomery county until 8 PM."}]
+        calls = [{"district": "Downtown", "incident_type": "Water Rescue", "count": 2}, {"district": "East", "incident_type": "Flooded Roadway", "count": 3}]
+        
+    elif sim_mode == "Flood Situation":
+        alert = {"level": "RED", "alert_text": "CRITICAL: Major river flooding identified. Evacuation warnings in effect for low-lying areas.", "predicted_level_ft": 155.0, "rate_of_rise_ft_per_15m": 1.5}
+        sensor = {"water_level_ft": 152.0, "rate_of_rise_ft_per_15m": 1.5, "timestamp": now_iso, "discharge_cfs": 65000}
+        forecast = {"current": {"precip_mm": 80.0, "summary": "Torrential Downpours", "temp_c": 17.5}, "hourly": forecast.get("hourly", [])}
+        alert_hist = [{"level": "RED", "predicted_level_ft": 152.0, "rate_of_rise_ft_per_15m": 1.5, "generated_at": now_iso}] + alert_hist[:4]
+        ema = [{"title": "Flash Flood Warning", "body": "Flash flood warning for Montgomery. Seek higher ground immediately."}]
+        calls = [
+            {"district": "North", "incident_type": "Water Rescue", "count": 15},
+            {"district": "Downtown", "incident_type": "Flooded Roadway", "count": 12},
+            {"district": "South", "incident_type": "Evacuation", "count": 7}
+        ]
+
+    history = [
+        {
+            "timestamp": (now_utc - timedelta(minutes=15 * i)).isoformat(), 
+            "water_level_ft": round(sensor["water_level_ft"] - (i * sensor["rate_of_rise_ft_per_15m"]), 2)
+        } 
+        for i in range(16)
+    ]
+
+    return alert, sensor, forecast, alert_hist, ema, calls, history
 
 
 # ── Clear callback — runs BEFORE script re-renders (most reliable approach) ──
@@ -396,24 +451,23 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     # ── Logo ─────────────────────────────────────────────────────────────────
-    st.markdown("""
-    <div style="text-align:center; padding:8px 0 6px;">
-        <div style="font-size:32px;">🛡️</div>
-        <div style="font-size:14px; font-weight:700; color:#60a5fa; line-height:1.2;">StormShield AI</div>
-        <div style="font-size:10px; color:#64748b;">Montgomery's Smart Flood &amp; Weather Guardian</div>
-    </div>
-    <hr style="border-color:#1e293b; margin:6px 0;">
-    """, unsafe_allow_html=True)
+    cols = st.columns([0.3, 0.7])
+    with cols[0]:
+        try:
+            st.image("frontend/assets/logo.png", width=60)
+        except:
+            st.markdown('<div style="font-size:32px;">🛡️</div>', unsafe_allow_html=True)
+    with cols[1]:
+        st.markdown("""
+        <div style="padding-top: 5px;">
+            <div style="font-size:16px; font-weight:800; color:#eff6ff; line-height:1;">StormShield AI</div>
+            <div style="font-size:9px; color:#94a3b8; line-height:1.2; margin-top: 2px;">Montgomery's Smart Flood &amp; Weather Guardian</div>
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown('<hr style="border-color:rgba(255,255,255,0.05); margin:8px 0;">', unsafe_allow_html=True)
 
-    # ── Refresh Interval ─────────────────────────────────────────────────────
-    refresh_label = st.selectbox(
-        "🔄 Refresh Interval",
-        options=list(REFRESH_OPTIONS.keys()),
-        index=2,
-        label_visibility="visible",
-    )
-    refresh_seconds = REFRESH_OPTIONS[refresh_label]
-    st.session_state["refresh_interval"] = refresh_seconds
+    # ── Refresh Interval (Backend Only) ──────────────────────────────────────
+    st.session_state["refresh_interval"] = 60
 
     st.markdown('<hr style="border-color:#1e293b; margin:6px 0;">', unsafe_allow_html=True)
 
@@ -555,46 +609,10 @@ sensor, history, forecast, alert, alert_hist, geo, ema, calls, health = fetch_al
 # ── Apply Simulation Overrides ──────────────────────────────────────────────
 sim_mode = st.session_state.get("sim_mode", "Live Data")
 if sim_mode != "Live Data":
-    from datetime import datetime, timezone, timedelta
-    now_utc = datetime.now(timezone.utc)
-    now_iso = now_utc.isoformat()
-    
-    if sim_mode == "Moderate Rain":
-        alert = {"level": "YELLOW", "alert_text": "Montgomery River level is normal but rising slowly. Expect runoff from moderate rain.", "predicted_level_ft": 145.9, "rate_of_rise_ft_per_15m": 0.2}
-        sensor = {"water_level_ft": 145.5, "rate_of_rise_ft_per_15m": 0.2, "timestamp": now_iso, "discharge_cfs": 4500}
-        forecast = {"current": {"precip_mm": 15.0, "summary": "Moderate Rain", "temp_c": 19.5}, "hourly": forecast.get("hourly", [])}
-        alert_hist = [{"level": "YELLOW", "predicted_level_ft": 145.5, "rate_of_rise_ft_per_15m": 0.2, "generated_at": now_iso}] + alert_hist[:4]
-        ema = [{"title": "Weather Advisory", "body": "Moderate rainfall expected throughout the day. Minor ponding on roads possible."}]
-        calls = [{"district": "North", "incident_type": "Traffic Hazard", "count": 1}]
-        
-    elif sim_mode == "Heavy Rain":
-        alert = {"level": "YELLOW", "alert_text": "Heavy rain in effect. Rising river levels and localized street flooding expected.", "predicted_level_ft": 149.1, "rate_of_rise_ft_per_15m": 0.8}
-        sensor = {"water_level_ft": 147.5, "rate_of_rise_ft_per_15m": 0.8, "timestamp": now_iso, "discharge_cfs": 18500}
-        forecast = {"current": {"precip_mm": 45.0, "summary": "Heavy Rain", "temp_c": 18.0}, "hourly": forecast.get("hourly", [])}
-        alert_hist = [{"level": "YELLOW", "predicted_level_ft": 147.5, "rate_of_rise_ft_per_15m": 0.8, "generated_at": now_iso}] + alert_hist[:4]
-        ema = [{"title": "Flash Flood Watch", "body": "A flash flood watch is in effect for Montgomery county until 8 PM."}]
-        calls = [{"district": "Downtown", "incident_type": "Water Rescue", "count": 2}, {"district": "East", "incident_type": "Flooded Roadway", "count": 3}]
-        
-    elif sim_mode == "Flood Situation":
-        alert = {"level": "RED", "alert_text": "CRITICAL: Major river flooding identified. Evacuation warnings in effect for low-lying areas.", "predicted_level_ft": 155.0, "rate_of_rise_ft_per_15m": 1.5}
-        sensor = {"water_level_ft": 152.0, "rate_of_rise_ft_per_15m": 1.5, "timestamp": now_iso, "discharge_cfs": 65000}
-        forecast = {"current": {"precip_mm": 80.0, "summary": "Torrential Downpours", "temp_c": 17.5}, "hourly": forecast.get("hourly", [])}
-        alert_hist = [{"level": "RED", "predicted_level_ft": 152.0, "rate_of_rise_ft_per_15m": 1.5, "generated_at": now_iso}] + alert_hist[:4]
-        ema = [{"title": "Flash Flood Warning", "body": "Flash flood warning for Montgomery. Seek higher ground immediately."}]
-        calls = [
-            {"district": "North", "incident_type": "Water Rescue", "count": 15},
-            {"district": "Downtown", "incident_type": "Flooded Roadway", "count": 12},
-            {"district": "South", "incident_type": "Evacuation", "count": 7}
-        ]
-        
-    # Generate realistic historical chart data sloping upwards to current level
-    history = [
-        {
-            "timestamp": (now_utc - timedelta(minutes=15 * i)).isoformat(), 
-            "water_level_ft": round(sensor["water_level_ft"] - (i * sensor["rate_of_rise_ft_per_15m"]), 2)
-        } 
-        for i in range(16)
-    ]
+    now_iso = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    alert, sensor, forecast, alert_hist, ema, calls, history = get_simulation_overrides(
+        sim_mode, now_iso, alert, sensor, forecast, alert_hist
+    )
 
 lookup_pnt = st.session_state.get("lookup_result")
 
@@ -606,24 +624,34 @@ header_col, toggle_col = st.columns([0.80, 0.20], vertical_alignment="center")
 
 with header_col:
     sub_color = "#64748b" if st.session_state["theme"] == "light" else "#94a3b8"
-    st.markdown(f"""
-    <div class="main-header" style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap:16px;">
-            <div style="font-size:42px; filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.4));">🛡️</div>
-            <div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span class="header-title" style="font-size: 26px;">StormShield AI</span>
-                    <span class="live-badge" style="font-size: 9px; padding: 1px 6px;">● LIVE</span>
-                </div>
-                <div style="font-size:10px; color:{sub_color}; font-weight:500;">Montgomery's Smart Flood & Weather Guardian</div>
+    
+    # Internal columns for Logo + Title + Status
+    icon_col, text_col, status_col_inner = st.columns([0.1, 0.6, 0.3], vertical_alignment="center")
+    
+    with icon_col:
+        try:
+            st.image("frontend/assets/logo.png", width=70)
+        except:
+            st.markdown('<div style="font-size:42px;">🛡️</div>', unsafe_allow_html=True)
+            
+    with text_col:
+        st.markdown(f"""
+        <div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span class="header-title" style="font-size: 28px; font-weight:800; color:{'#0f172a' if st.session_state['theme'] == 'light' else '#f8fafc'};">StormShield AI</span>
+                <span class="live-badge" style="font-size: 9px; padding: 2px 8px; background:rgba(34, 197, 94, 0.1); color:#22c55e; border-radius:10px; border:1px solid rgba(34, 197, 94, 0.2);">● LIVE</span>
             </div>
+            <div style="font-size:11px; color:{sub_color}; font-weight:500; margin-top:2px;">Montgomery's Smart Flood & Weather Guardian</div>
         </div>
-        <div style="text-align:right; background:{bg_box}; padding:6px 14px; border-radius:10px; border:1px solid {border_box};">
-            <div style="font-size:11px; font-weight:800; color:{status_color_val}; letter-spacing:0.8px;">{level} STATUS</div>
-            <div style="font-size:9px; color:#64748b; margin-top:1px;">{datetime.now(timezone.utc).strftime("%H:%M:%S")} UTC</div>
+        """, unsafe_allow_html=True)
+        
+    with status_col_inner:
+        st.markdown(f"""
+        <div style="text-align:right; background:{bg_box}; padding:8px 16px; border-radius:12px; border:1px solid {border_box}; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            <div style="font-size:12px; font-weight:900; color:{status_color_val}; letter-spacing:1px;">{level} STATUS</div>
+            <div style="font-size:10px; color:#64748b; margin-top:2px; font-family: monospace;">{datetime.now(timezone.utc).strftime("%H:%M:%S")} UTC</div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 with toggle_col:
     # Flex container to align everything top-right

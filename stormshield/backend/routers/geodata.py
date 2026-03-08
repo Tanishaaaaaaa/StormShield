@@ -15,7 +15,15 @@ def get_flood_zones():
     data = cache.get("flood_zones")
     if data:
         return data
-    # Return stub GeoJSON if not cached
+        
+    # Attempt to load from database first
+    from backend.modules.database import get_flood_zones_geojson
+    db_data = get_flood_zones_geojson()
+    if db_data.get("features"):
+        cache.set("flood_zones", db_data, ttl_seconds=3600)
+        return db_data
+
+    # Return stub GeoJSON if not cached and no DB entries
     from backend.modules.ingestion.brightdata_scraper import _stub_flood_zones
     return _stub_flood_zones()
 
