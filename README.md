@@ -1,46 +1,60 @@
-# 🛡️ StormShield AI
+# 🛡️ StormShield AI — Montgomery's Smart Flood & Weather Guardian
 **World Wide Vibes Hackathon Submission**
 
-**StormShield AI** is a real-time flood prediction and civic alert system designed for Montgomery, Alabama. It serves as a smart guardian against weather anomalies, leveraging real-time data ingestion, machine learning, and generative AI to keep citizens safe and informed.
+**StormShield AI — Montgomery's Smart Flood & Weather Guardian** is a real-time flood prediction and civic alert system designed for Montgomery, Alabama. It serves as a smart guardian against weather anomalies, leveraging real-time data ingestion, machine learning, and generative AI to keep citizens safe and informed through a premium glassmorphic interface.
+
+---
+
+## 📄 Documentation
+
+For deep dives into the system architecture, feature breakdown, and developer guides, refer to the following:
+
+*   **[Technical Product Requirement Document (PRD)](./StormShield%20AI%20%E2%80%94%20Technical%20Product%20Requirement%20Document.md)**: Full technical specifications and logic.
+*   **[User Interaction Module](./StormShield%20AI%20%E2%80%94%20User%20Interaction%20Module.md)**: Breakdown of UI behaviors and modular code logic.
+*   **[Implementation Order & Roadmap](./Structured%20Markdown%20&%20Implementation%20Order.md)**: Step-by-step assembly guide optimized for AI editors.
 
 ---
 
 ## 🌟 Key Features
 
-*   **Real-Time Data Ingestion:** Constantly polls USGS stream gauge data (e.g., Sligo Creek), NOAA/NWS alerts, and supplementary local weather data.
-*   **Predictive Analytics (XGBoost):** Employs an XGBoost machine learning model trained on historical data to predict water levels 30 minutes into the future (T+30).
-*   **Smart Alerting Engine:** Automatically issues **RED**, **YELLOW**, or **GREEN** zone alerts based on current predictions and rate-of-rise metrics.
-*   **Generative AI Integration (Gemini 2.0 Flash):**
-    *   Generates dynamic, non-panicky, action-oriented public alert bulletins.
-    *   Powers **Ask StormShield AI**, a conversational RAG interface where users can ask questions about current flood conditions, road closures, and evacuation staging areas.
-*   **Live Interactive Dashboard:** A stunning, responsive Streamlit dashboard featuring:
-    *   Live telemetry (Water Level, Discharge, Rate of Rise, Predictive Forecasting).
-    *   **Dark/Light Mode** support with beautifully styled widgets.
-    *   Interactive flood zone maps with live sensor markers.
-    *   A "Green Infrastructure" simulator to estimate how many trees are needed to offset local water runoff.
+*   **Real-Time Data Ingestion:** Constantly polls USGS stream gauge data (Station 01648000), NOAA/NWS alerts, and high-resolution weather telemetry.
+*   **Predictive Analytics (XGBoost):** Employs an XGBoost regression model to produce 30-minute water-level forecasts (T+30) with confidence scoring.
+*   **Smart Alerting Engine:** Automatically issues **RED**, **YELLOW**, or **GREEN** status based on predicted crests and rate-of-rise thresholds.
+*   **Generative AI (Gemini 2.0 Flash):**
+    *   **Dynamic Advisories**: Generates plain-language, action-oriented public bulletins.
+    *   **Ask StormShield AI**: A RAG-powered conversational interface grounded in live sensor and spatial data.
+*   **Premium Glassmorphic Dashboard**:
+    *   **Dual-Theme Support**: "Midnight Nimbus" (Dark) and "Coastal Mist" (Light) visual modes.
+    *   **4-Tab Navigation**: Live Dashboard, Situation Report, Safety AI Chat, and Detailed Weather Analysis.
+    *   **Spatial Lookup Engine**: High-performance address-based flood risk checks using Shapely STRtree indexing.
+*   **Multi-Scenario Simulation**: Interactive stress-testing for "Moderate", "High Rainfall", "Heavy Rain", and "Flood" scenarios.
 
 ---
 
 ## ⚙️ Tech Stack
 
-*   **Backend:** Python, FastAPI, APScheduler (Background Jobs), Uvicorn.
-*   **Frontend:** Streamlit, Folium (Mapping), Plotly (Interactive Charts).
-*   **AI / ML:** XGBoost (Time-series forecasting), Google Gemini 2.0 Flash (Alert generation & RAG Q&A).
-*   **Data Sources:** USGS Water Services API, NWS/NOAA Alerts, Bright Data (for auxiliary web scraping tasks).
+### Backend
+- **Core**: Python 3.11, FastAPI, Uvicorn (ASGI).
+- **Processing**: Pandas, NumPy, SciPy (Rolling means & Z-score signal filtering).
+- **ML/AI**: XGBoost, Scikit-learn, Google Generative AI (Gemini 2.0 Flash).
+- **Spatial**: Shapely (STRtree lookup), Geopy (Nominatim geocoding).
+- **Automation**: APScheduler (In-memory job scheduling), Selenium (Bright Data scraping fallback).
+
+### Frontend
+- **Framework**: Streamlit 1.41.x.
+- **Visuals**: Plotly (Scientific Charts), Folium (Leaflet.js Mapping), Streamlit-Autorefresh.
+- **Styling**: Custom CSS injection for glassmorphism and animated theme transitions.
 
 ---
 
 ## 🚀 Quick Start (Local Setup)
 
-### 1. Clone & Set Up Virtual Environment
+### 1. Set Up Environment
 ```bash
 git clone https://github.com/Tanishaaaaaaa/StormShield.git
 cd StormShield
 python -m venv venv
-
-# Activate Virtual Environment
-source venv/bin/activate        # Mac/Linux
-# venv\Scripts\activate         # Windows
+source venv/bin/activate  # Mac/Linux: source venv/bin/activate | Windows: venv\Scripts\activate
 ```
 
 ### 2. Install Dependencies
@@ -49,81 +63,69 @@ cd stormshield
 pip install -r requirements.txt
 ```
 
-### 3. Environment Variables (`.env`)
-Ensure you have a `.env` file in the `stormshield/` directory with the following keys:
+### 3. Configure `.env`
+Create a `.env` in `stormshield/` with your keys:
 ```ini
-GEMINI_API_KEY=your_gemini_api_key
-BRIGHTDATA_API_KEY=your_brightdata_api_key  # Optional for scraping
+GEMINI_API_KEY=your_key
+BRIGHTDATA_API_KEY=your_key
 USGS_STATION_ID=01648000
 FLOOD_STAGE_FT=8.0
 BACKEND_URL=http://localhost:8000
-DEFAULT_REFRESH_SECONDS=60
 ```
 
-### 4. Train the ML Model (First time only)
+### 4. Application Components
+Run the backend and frontend in separate terminals:
+
+**Terminal 1 (Backend API)**
 ```bash
-python backend/modules/prediction/train.py
+uvicorn backend.main:app --reload --port 8000
 ```
 
-### 5. Run the Application
-You will need two terminal windows to run both the API backend and the Streamlit frontend.
-
-**Terminal 1 (Backend API):**
+**Terminal 2 (Frontend Dashboard)**
 ```bash
-cd stormshield
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-```
-*   **API Docs:** http://localhost:8000/docs
-*   **Health Check:** http://localhost:8000/health
-
-**Terminal 2 (Frontend Dashboard):**
-```bash
-cd stormshield
 streamlit run frontend/app.py
 ```
-*   **Live Dashboard:** http://localhost:8501
 
 ---
 
 ## 📁 Project Architecture
 
-```
+```text
 StormShield/
-├── README.md                     # You are here!
-└── stormshield/                  # Main Application Directory
+├── README.md                      # Documentation Hub
+└── stormshield/                   # Application Root
     ├── backend/
-    │   ├── main.py               # FastAPI App & Endpoints
-    │   ├── scheduler.py          # Background polling jobs
+    │   ├── scheduler.py           # Polling & Ingestion registry
     │   ├── modules/
-    │   │   ├── ingestion/        # USGS / NOAA data fetching
-    │   │   ├── processing/       # Data smoothing & filtering
-    │   │   ├── prediction/       # XGBoost Inference & Training
-    │   │   ├── alert/            # Threshold Logic + Gemini Integration
-    │   │   ├── simulation/       # Green Infrastructure logic
-    │   │   └── query/            # RAG Chatbot Engine
-    │   └── data/                 # JSON caches & ML model weights
+    │   │   ├── alert/             # Threshold engine & LLM text
+    │   │   ├── cache/             # In-memory + JSON persistence
+    │   │   ├── ingestion/         # USGS/NOAA/NWS/BrightData clients
+    │   │   ├── prediction/        # XGBoost Inference
+    │   │   ├── processing/        # Signal smoothing & Filtering
+    │   │   ├── query/             # RAG Chat engine
+    │   │   └── simulation/        # Runoff & Green-infra calculators
+    │   └── routers/               # FastAPI REST endpoints
     ├── frontend/
-    │   ├── app.py                # Streamlit Dashboard Entry Point
-    │   └── components/           # UI Components (Map, Alerts, Weather, Chat)
-    ├── .env                      # Secrets & Config
-    └── requirements.txt          # Python Dependencies
+    │   ├── app.py                 # Theme & Tab Orchestrator
+    │   └── components/            # Modular UI Widgets (Map, Gauges, Chat)
+    └── data/                      # Local Cache (FEMA Zones, EMA Logs)
 ```
 
 ---
 
 ## 🧠 Smart Alerting Logic
 
-| Status | Trigger Condition | Dashboard Indicator |
+| Status | Trigger Condition | Advisor Guidance |
 | :--- | :--- | :--- |
-| 🟢 **GREEN** | Normal conditions, low water level. | Safe / Normal Operations |
-| 🟡 **YELLOW**| Rate of rise > 2.0 ft/15 min. | Caution / Prepare |
-| 🔴 **RED**   | Predicted level ≥ 8.0 ft (Flood Stage). | Action Required / Evacuate |
+| 🟢 **GREEN** | Predicted Level < Threshold | Normal conditions; monitor updates. |
+| 🟡 **YELLOW**| Rate of Rise > 2.0 ft/15m | Caution; localized ponding possible. |
+| 🔴 **RED**   | Predicted Level ≥ 8.0 ft | Emergency; flooding imminent. Evacuate. |
 
 ---
 
 ## 🏆 Hackathon Context
 
-This project was built for the **World Wide Vibes Hackathon**. The goal was to build a highly responsive, AI-driven civic application capable of assisting local emergency management agencies and keeping citizens informed during extreme weather events.
+This project was built for the **World Wide Vibes Hackathon** to demonstrate how AI can transform raw meteorological and hydrological data into actionable public safety intelligence.
 
 **Team Name:** OmniShield
 **Project Name:** StormShield AI
